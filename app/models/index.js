@@ -4,6 +4,7 @@ const Sequelize = require("sequelize");
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
   dialect: dbConfig.dialect,
+  timezone: dbConfig.timezone, // Set the timezone here
   define: {
     timestamps: false, //true: createdAt & updatedAt
     freezeTableName: true, //To avoid plurals while creating table name
@@ -39,6 +40,20 @@ db.orderStatusHistory = require("./orderStatusHistory.model.js")(sequelize, Sequ
 
 
 // Establish relationships
+
+
+// Customer and Operator many-to-many relationship through CustomerOperator
+db.customers.belongsToMany(db.operators, {
+  through: db.customerOperator,
+  foreignKey: "customer_id",
+  otherKey: "operator_id",
+});
+
+db.operators.belongsToMany(db.customers, {
+  through: db.customerOperator,
+  foreignKey: "operator_id",
+  otherKey: "customer_id",
+});
 
 // Define associations
 db.customers.hasMany(db.customerOperator, { foreignKey: "customer_id" });

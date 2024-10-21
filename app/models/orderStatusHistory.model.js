@@ -1,5 +1,6 @@
-// models/orderStatusHistory.js
+const { format } = require("date-fns"); // Importing date-fns for formatting
 
+// models/orderStatusHistory.js
 module.exports = (sequelize, Sequelize) => {
     const OrderStatusHistory = sequelize.define("order_status_history", {
       orderStatusHistory_id: {
@@ -23,6 +24,10 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.DATE,
         allowNull: true,
         defaultValue: Sequelize.NOW,
+        get() {
+          const timestampValue = this.getDataValue("timestamp");
+          return timestampValue ? format(new Date(timestampValue), "dd-MM-yyyy HH:mm:ss") : null;
+        },
       },
       active_status: {
         type: Sequelize.BOOLEAN,
@@ -30,8 +35,12 @@ module.exports = (sequelize, Sequelize) => {
         defaultValue: false, // Set default to true
       },
       dateOfRequired: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATEONLY,
         allowNull: true, // Allow null if not required
+        get() {
+          const dateValue = this.getDataValue("dateOfRequired");
+          return dateValue ? format(new Date(dateValue), "dd-MM-yyyy") : null; // Format as DD-MM-YYYY
+        },
       },
       tracing_status: {  // New field added here
         type: Sequelize.BOOLEAN,

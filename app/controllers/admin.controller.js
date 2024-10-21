@@ -68,3 +68,35 @@ exports.loginAdmin = async (req, res) => {
     //     .json({ message: "Error logging in admin", error: error.message });
   }
 };
+
+
+
+// Get admin details by admin_id
+exports.getAdminById = async (req, res) => {
+  const adminId = req.params.admin_id; // Get admin_id from request parameters
+
+  try {
+    const admin = await Admin.findOne({
+      where: { admin_id: adminId },
+      attributes: { exclude: ["password"] }, // Exclude the password field from the response
+    });
+
+    if (!admin) {
+      RESPONSE.Failure.Message = "Admin not found.";
+      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+      // return res.status(404).json({ message: "Admin not found." });
+    }
+
+    RESPONSE.Success.Message = "getAdmin successfully.";
+    RESPONSE.Success.data = admin;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    // res.status(200).json(admin);
+  } catch (error) {
+    console.error("Error fetching admin by ID:", error);
+    RESPONSE.Failure.Message =
+      error.message || "Error fetching admin.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+    // console.error("Error fetching admin by ID:", error);
+    // res.status(500).json({ message: "Error fetching admin." });
+  }
+};

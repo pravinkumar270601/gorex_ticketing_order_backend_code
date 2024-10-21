@@ -359,3 +359,52 @@ exports.updateOperatorAssignment = async (req, res) => {
     // });
   }
 };
+
+// Get customers based on operator_id
+exports.getCustomersByOperator = async (req, res) => {
+  const { operator_id } = req.params;
+
+  try {
+    // Fetch customers assigned to the operator
+    const customers = await CustomerOperator.findAll({
+      where: {
+        operator_id,
+        delete_status: 0, // Active assignments only
+      },
+      include: [
+        {
+          model: Customer, // Assuming there is a Customer model
+          attributes: ["customer_id", "name", "email", "phone"], // Select necessary fields
+        },
+      ],
+    });
+
+    // If no customers found
+    if (!customers || customers.length === 0) {
+      RESPONSE.Success.Message =
+        "No customers found for the specified operator.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      // return res.status(404).json({
+      //   message: "No customers found for the specified operator.",
+      // });
+    }
+
+    // Return the list of customers
+    RESPONSE.Success.Message = "Customers fetched successfully.";
+    RESPONSE.Success.data = customers;
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    // res.status(200).json({
+    //   message: "Customers fetched successfully.",
+    //   data: customers,
+    // });
+  } catch (error) {
+    console.error("getCustomersByOperator:", error);
+    RESPONSE.Failure.Message = error.message || "An error occurred while fetching customers.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+    // res.status(500).json({
+    //   message: "An error occurred while fetching customers.",
+    //   error: error.message,
+    // });
+  }
+};

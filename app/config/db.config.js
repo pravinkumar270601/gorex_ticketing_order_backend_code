@@ -4,6 +4,7 @@ module.exports = {
   PASSWORD: "",
   DB: "d_gorex_ticketing_order_fulfilment_mysql_db",
   dialect: "mysql",
+  timezone: "+05:30", // Indian Standard Time (UTC+5:30)
   pool: {
     max: 5,
     min: 0,

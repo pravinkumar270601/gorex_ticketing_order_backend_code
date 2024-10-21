@@ -44,13 +44,12 @@ exports.registerManager = async (req, res) => {
   }
 };
 
-
 // Login
 exports.loginManager = async (req, res) => {
   try {
     const { email, password } = req.body;
     const manager = await Manager.findOne({ where: { email, password } });
-    if (!manager){
+    if (!manager) {
       RESPONSE.Success.Message = "Manager not found!";
       RESPONSE.Success.data = {};
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
@@ -69,5 +68,34 @@ exports.loginManager = async (req, res) => {
     // res
     //   .status(500)
     //   .json({ message: "Error logging in manager", error: error.message });
+  }
+};
+
+// Get manager details by manager_id
+exports.getManagerById = async (req, res) => {
+  const managerId = req.params.manager_id; // Get manager_id from request parameters
+
+  try {
+    const manager = await Manager.findOne({
+      where: { manager_id: managerId },
+      attributes: { exclude: ["password"] }, // Exclude the password field from the response
+    });
+
+    if (!manager) {
+      RESPONSE.Failure.Message = "Manager not found.";
+      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+      // return res.status(404).json({ message: "Manager not found." });
+    }
+
+    RESPONSE.Success.Message = "getManagerById successfully.";
+    RESPONSE.Success.data = manager;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    // res.status(200).json(manager);
+  } catch (error) {
+    console.error("Error fetching manager by ID:", error);
+
+    RESPONSE.Failure.Message = error.message || "Error fetching manager.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+    // res.status(500).json({ message: "Error fetching manager." });
   }
 };

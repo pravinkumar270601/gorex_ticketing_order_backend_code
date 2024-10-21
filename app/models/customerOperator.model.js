@@ -1,5 +1,6 @@
-// models/customerOperator.model.js
+const { format } = require("date-fns"); // Importing date-fns for formatting
 
+// models/customerOperator.model.js
 module.exports = (sequelize, Sequelize) => {
     const CustomerOperator = sequelize.define("customer_operator", {
       assignment_id: {
@@ -33,11 +34,17 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW,
+        get() {
+          return format(this.getDataValue("createdAt"), "dd-MM-yyyy HH:mm:ss");
+        },
       },
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW,
+        get() {
+          return format(this.getDataValue("createdAt"), "dd-MM-yyyy HH:mm:ss");
+        },
       },
     });
   
