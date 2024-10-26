@@ -14,7 +14,18 @@ const MESSAGE = {
     EMAIL_NOT_FOUND:'Email does not match',
     PASSWORD_NOT_FOUND:'Password does not match',
     NOT_FOUND:'Not Found',
-    ALREADY_SCHEDULE:'Already Scheduled'
+    ALREADY_SCHEDULE:'Already Scheduled',
+
+    // --------------------------------------------
+    OTP_SUBJECT: "Your OTP Code",
+    OTP_TEXT: "Your OTP code is",
+    OTP_EXPIRY: "It will expire in 5 minutes.",
+    OTP_SENT: "OTP sent successfully!",
+    OTP_FAILED: "Failed to send OTP",
+    INVALID_OTP: "Invalid OTP",
+    OTP_EXPIRED: "OTP expired",
+    OTP_VERIFIED: "OTP verified successfully",
+    OTP_VERIFICATION_FAILED: "Failed to verify OTP"
 };
 
 module.exports = { MESSAGE };

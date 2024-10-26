@@ -4,6 +4,7 @@ const CustomerOperator = db.customerOperator;
 const OrderStatusHistory = db.orderStatusHistory;
 const Customer = db.customers;
 const Operator = db.operators;
+const { Op } = require("sequelize"); // Import Sequelize operators
 
 const RESPONSE = require("../constants/response");
 const { MESSAGE } = require("../constants/message");
@@ -78,6 +79,8 @@ exports.createOrder = async (req, res) => {
       volume,
       station,
       paymentStatus,
+      amountOfProduct,
+      paymentProofImages,
     } = req.body;
 
     // Validate required fields
@@ -87,7 +90,8 @@ exports.createOrder = async (req, res) => {
       !required_date ||
       !volume ||
       !station ||
-      !paymentStatus
+      !paymentStatus ||
+      !amountOfProduct
     ) {
       RESPONSE.Failure.Message = "All fields are required.";
       return res.status(StatusCode.BAD_REQUEST.code).send(RESPONSE.Failure);
@@ -113,6 +117,8 @@ exports.createOrder = async (req, res) => {
       volume,
       station,
       paymentStatus,
+      amountOfProduct,
+      paymentProofImages,
     });
 
     // Create the initial status history entry for "ordered"
@@ -173,7 +179,7 @@ exports.getAllOrders = async (req, res) => {
     RESPONSE.Success.Message = "Active orders retrieved successfully.";
     RESPONSE.Success.data = orders;
     // console.log(orders);
-    
+
     return res.status(StatusCode.OK.code).send(RESPONSE.Success);
     // return res.status(200).json({
     //   Status: true,
@@ -192,6 +198,40 @@ exports.getAllOrders = async (req, res) => {
     //   Message: "Error retrieving active orders.",
     //   Error: error.message,
     // });
+  }
+};
+
+// Get all active orders with their customer and operator details
+exports.getAllOrdersWithCustomerAndOperatorDetails = async (req, res) => {
+  try {
+    const orders = await Order.findAll({
+      where: { delete_status: 0 }, // Fetch active orders
+      include: [
+        {
+          model: Customer,
+          attributes: { exclude: ["password"] }, // Exclude sensitive fields like password
+          // attributes: ["name", "email"], // Only include name and email
+        },
+        {
+          model: Operator,
+          attributes: { exclude: ["password"] },
+          // attributes: ["name", "email"], // Only include name and email
+        },
+      ],
+    });
+
+    RESPONSE.Success.Message =
+      "Active orders with customer and operator details retrieved successfully.";
+    RESPONSE.Success.data = orders;
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error(
+      "Error retrieving orders with customer and operator details:",
+      error
+    );
+    RESPONSE.Failure.Message =
+      error.message || "Error retrieving active orders.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };
 
@@ -254,60 +294,135 @@ exports.getOrderById = async (req, res) => {
 };
 
 // Update an existing order
+// exports.updateOrder = async (req, res) => {
+//   const { order_id } = req.params;
+//   const {
+//     fuelType,
+//     required_date,
+//     volume,
+//     station,
+//     paymentStatus,
+//     order_status,
+//   } = req.body;
+
+//   try {
+//     const order = await Order.findOne({ where: { order_id } });
+//     if (!order) {
+//       RESPONSE.Failure.Message = "Order not found.";
+//       return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+//       // return res.status(404).json({
+//       //   Status: false,
+//       //   Success: false,
+//       //   Message: "Order not found.",
+//       //   Error: "Not Found",
+//       // });
+//     }
+
+//     await Order.update(
+//       {
+//         fuelType: fuelType || order.fuelType,
+//         required_date: required_date || order.required_date,
+//         volume: volume || order.volume,
+//         station: station || order.station,
+//         paymentStatus: paymentStatus || order.paymentStatus,
+//         order_status: order_status || order.order_status,
+//         updatedAt: new Date(),
+//       },
+//       { where: { order_id } }
+//     );
+//     RESPONSE.Success.Message = "Order updated successfully.";
+//     RESPONSE.Success.data = {};
+//     return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+//     // return res.status(200).json({
+//     //   Status: true,
+//     //   Success: true,
+//     //   Message: "Order updated successfully.",
+//     // });
+//   } catch (error) {
+//     console.error("updateOrder:", error);
+//     RESPONSE.Failure.Message = error.message || "Error updating order.";
+//     return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+//     // return res.status(500).json({
+//     //   Status: false,
+//     //   Success: false,
+//     //   Message: "Error updating order.",
+//     //   Error: error.message,
+//     // });
+//   }
+// };
+
 exports.updateOrder = async (req, res) => {
   const { order_id } = req.params;
-  const {
-    fuelType,
-    required_date,
-    volume,
-    station,
-    paymentStatus,
-    order_status,
-  } = req.body;
 
   try {
+    // Check if the order exists
     const order = await Order.findOne({ where: { order_id } });
     if (!order) {
       RESPONSE.Failure.Message = "Order not found.";
       return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
-      // return res.status(404).json({
-      //   Status: false,
-      //   Success: false,
-      //   Message: "Order not found.",
-      //   Error: "Not Found",
-      // });
     }
 
-    await Order.update(
-      {
-        fuelType: fuelType || order.fuelType,
-        required_date: required_date || order.required_date,
-        volume: volume || order.volume,
-        station: station || order.station,
-        paymentStatus: paymentStatus || order.paymentStatus,
-        order_status: order_status || order.order_status,
-        updatedAt: new Date(),
-      },
-      { where: { order_id } }
-    );
-    RESPONSE.Success.Message = "Order updated successfully.";
-    RESPONSE.Success.data = {};
-    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-    // return res.status(200).json({
-    //   Status: true,
-    //   Success: true,
-    //   Message: "Order updated successfully.",
-    // });
+    // Update the order directly with req.body
+    const [updated] = await Order.update(req.body, {
+      where: { order_id },
+    });
+
+    // Check if the update was successful
+    if (updated) {
+      RESPONSE.Success.Message = "Order updated successfully.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    } else {
+      RESPONSE.Failure.Message = "Order update failed.";
+      return res.status(StatusCode.BAD_REQUEST.code).send(RESPONSE.Failure);
+    }
   } catch (error) {
     console.error("updateOrder:", error);
     RESPONSE.Failure.Message = error.message || "Error updating order.";
     return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
-    // return res.status(500).json({
-    //   Status: false,
-    //   Success: false,
-    //   Message: "Error updating order.",
-    //   Error: error.message,
-    // });
+  }
+};
+
+exports.updateOrderPaymentProofImages = async (req, res) => {
+  const { order_id } = req.params;
+  const { paymentProofImages } = req.body; // Expecting an array of image objects
+
+  try {
+    if (!Array.isArray(paymentProofImages)) {
+      RESPONSE.Failure.Message = '"paymentProofImages" should be an array.';
+      return res.status(StatusCode.BAD_REQUEST.code).send(RESPONSE.Failure);
+    }
+
+    // Fetch the existing order
+    const order = await Order.findOne({ where: { order_id } });
+    if (!order) {
+      RESPONSE.Failure.Message = "Order not found.";
+      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+    }
+
+    // Parse existing paymentProofImages if available, or start with an empty array
+    let existingImages = [];
+    if (order.paymentProofImages) {
+      existingImages = JSON.parse(order.paymentProofImages);
+    }
+
+    // Add new images to the existing array
+    existingImages = existingImages.concat(paymentProofImages);
+
+    // Update the paymentProofImages in the database
+    await Order.update(
+      { paymentProofImages: existingImages, updatedAt: new Date() },
+      { where: { order_id } }
+    );
+
+    RESPONSE.Success.Message = "Payment proof images updated successfully.";
+    RESPONSE.Success.data = { paymentProofImages: existingImages };
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("updatePaymentProofImages:", error);
+    RESPONSE.Failure.Message =
+      error.message || "Error updating payment proof images.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };
 
@@ -342,7 +457,6 @@ exports.updateOrderToOperator = async (req, res) => {
     return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };
-
 
 // Soft delete an order
 exports.deleteOrder = async (req, res) => {
@@ -685,6 +799,10 @@ exports.getDashboardStatsForCustomer = async (req, res) => {
           db.Sequelize.fn("COUNT", db.Sequelize.col("order_id")),
           "totalOrderCount",
         ],
+        [
+          db.Sequelize.fn("SUM", db.Sequelize.col("amountOfProduct")),
+          "totalAmountOfProduct",
+        ],
       ],
       raw: true,
     });
@@ -714,6 +832,7 @@ exports.getDashboardStatsForCustomer = async (req, res) => {
     const result = {
       totalVolume: orderStats[0].totalVolume || 0,
       totalOrderCount: orderStats[0].totalOrderCount || 0,
+      totalAmountOfProduct: orderStats[0].totalAmountOfProduct || 0,
       statusCounts: {
         ordered: 0,
         shipped: 0,
@@ -1061,3 +1180,67 @@ exports.getDeliveredStatusOrdersForCustomer = async (req, res) => {
     // });
   }
 };
+
+// API to get all "ordered" status orders
+exports.getAllOrderedStatusOrders = async (req, res) => {
+  try {
+    // Fetch all "ordered" status orders
+    const orders = await Order.findAll({
+      where: { order_status: "ordered", delete_status: 0 },
+    });
+
+    RESPONSE.Success.Message =
+      "'Ordered' status orders retrieved successfully.";
+    RESPONSE.Success.data = orders;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("getOrderedStatusOrders:", error);
+    RESPONSE.Failure.Message =
+      error.message ||
+      "An error occurred while fetching 'ordered' status orders.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+// API to get all "shipped" status orders
+exports.getAllShippedStatusOrders = async (req, res) => {
+  try {
+    // Fetch all "shipped" status orders
+    const orders = await Order.findAll({
+      where: { order_status: "shipped", delete_status: 0 },
+    });
+
+    RESPONSE.Success.Message =
+      "'Shipped' status orders retrieved successfully.";
+    RESPONSE.Success.data = orders;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("getShippedStatusOrders:", error);
+    RESPONSE.Failure.Message =
+      error.message ||
+      "An error occurred while fetching 'shipped' status orders.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+// API to get all "delivered" status orders
+exports.getAllDeliveredStatusOrders = async (req, res) => {
+  try {
+    // Fetch all "delivered" status orders
+    const orders = await Order.findAll({
+      where: { order_status: "delivered", delete_status: 0 },
+    });
+
+    RESPONSE.Success.Message =
+      "'Delivered' status orders retrieved successfully.";
+    RESPONSE.Success.data = orders;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("getDeliveredStatusOrders:", error);
+    RESPONSE.Failure.Message =
+      error.message ||
+      "An error occurred while fetching 'delivered' status orders.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+

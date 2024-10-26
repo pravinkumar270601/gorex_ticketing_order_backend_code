@@ -1,0 +1,492 @@
+
+exports.getOverallDashboardStatsWithFilter = async (req, res) => {
+  const { from_date, to_date } = req.body;
+
+  // Initialize date variables
+  let startDate;
+  let endDate;
+
+  // If both from_date and to_date are provided
+  if (from_date && to_date) {
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(to_date + "T23:59:59");
+  } else if (from_date) {
+    // If only from_date is provided
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(); // Get all until now
+  } else if (to_date) {
+    // If only to_date is provided
+    startDate = new Date("1970-01-01T00:00:00"); // Get all from the beginning of time
+    endDate = new Date(to_date + "T23:59:59");
+  }
+
+  try {
+    // Fetch total order count, total volume, and total amountOfProduct from the Orders table
+    const orderStats = await Order.findAll({
+      where: {
+        delete_status: 0,
+        ...(startDate && endDate ? { createdAt: { [Op.between]: [startDate, endDate] } } : {})
+      },
+      attributes: [
+        [db.Sequelize.fn("COUNT", db.Sequelize.col("order_id")), "totalOrderCount"],
+        [db.Sequelize.fn("SUM", db.Sequelize.col("volume")), "totalVolume"],
+        [db.Sequelize.fn("SUM", db.Sequelize.col("amountOfProduct")), "totalAmountOfProduct"]
+      ],
+      raw: true
+    });
+
+    // Count each status from the OrderStatusHistory table where active_status is true
+    const statusCounts = await OrderStatusHistory.findAll({
+      where: {
+        active_status: true,
+        ...(startDate && endDate ? { timestamp: { [Op.between]: [startDate, endDate] } } : {})
+      },
+      attributes: [
+        "order_status",
+        [db.Sequelize.fn("COUNT", db.Sequelize.col("OrderStatusHistory_id")), "count"]
+      ],
+      group: ["order_status"],
+      raw: true
+    });
+
+    // Get total operator count from the Operators table
+    const operatorStats = await Operator.findAll({
+      where: {
+        ...(startDate && endDate ? { createdAt: { [Op.between]: [startDate, endDate] } } : {})
+      },
+      attributes: [
+        [db.Sequelize.fn("COUNT", db.Sequelize.col("operator_id")), "totalOperatorCount"]
+      ],
+      raw: true
+    });
+
+    // Get total customer count from the Customers table
+    const customerStats = await Customer.findAll({
+      where: {
+        ...(startDate && endDate ? { createdAt: { [Op.between]: [startDate, endDate] } } : {})
+      },
+      attributes: [
+        [db.Sequelize.fn("COUNT", db.Sequelize.col("customer_id")), "totalCustomerCount"]
+      ],
+      raw: true
+    });
+
+    // Structure the result to make it easier to read
+    const result = {
+      totalOrderCount: orderStats[0].totalOrderCount || 0,
+      totalVolume: orderStats[0].totalVolume || 0,
+      totalAmountOfProduct: orderStats[0].totalAmountOfProduct || 0,
+      statusCounts: {
+        ordered: 0,
+        shipped: 0,
+        delivered: 0
+      },
+      totalOperatorCount: operatorStats[0].totalOperatorCount || 0,
+      totalCustomerCount: customerStats[0].totalCustomerCount || 0
+    };
+
+    // Update status counts based on the query result
+    statusCounts.forEach((status) => {
+      if (status.order_status === "ordered") {
+        result.statusCounts.ordered = status.count;
+      } else if (status.order_status === "shipped") {
+        result.statusCounts.shipped = status.count;
+      } else if (status.order_status === "delivered") {
+        result.statusCounts.delivered = status.count;
+      }
+    });
+
+    RESPONSE.Success.Message = "Overall dashboard statistics retrieved successfully.";
+    RESPONSE.Success.data = result;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("getOverallDashboardStats:", error);
+    RESPONSE.Failure.Message = error.message || "An error occurred while fetching dashboard statistics.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+exports.getOrdersByStatusWithFilter = async (req, res) => {
+  const { from_date, to_date, status } = req.body; // Get the date range from the request body
+
+  // Initialize date variables
+  let startDate;
+  let endDate;
+
+  // If both from_date and to_date are provided
+  if (from_date && to_date) {
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(to_date + "T23:59:59");
+  } else if (from_date) {
+    // If only from_date is provided
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(); // Get all until now
+  } else if (to_date) {
+    // If only to_date is provided
+    startDate = new Date("1970-01-01T00:00:00"); // Get all from the beginning of time
+    endDate = new Date(to_date + "T23:59:59");
+  }
+
+  try {
+    const orders = await OrderStatusHistory.findAll({
+      where: {
+        active_status: true,
+        order_status: status, // Use the status provided in the request
+        ...(startDate && endDate ? { timestamp: { [Op.between]: [startDate, endDate] } } : {})
+      },
+      include: [
+        {
+          model: Order,
+          where: {
+            delete_status: 0,
+          },
+        },
+      ],
+    });
+
+    RESPONSE.Success.Message = `Orders with status '${status}' retrieved successfully.`;
+    RESPONSE.Success.data = orders;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("getOrdersByStatus:", error);
+    RESPONSE.Failure.Message =
+      error.message || "An error occurred while fetching orders by status.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+
+================================================================================
+
+
+exports.getOverallDashboardStatsWithFilter = async (req, res) => {
+  const { from_date, to_date } = req.body;
+
+  // Initialize date variables
+  let startDate;
+  let endDate;
+
+  // If both from_date and to_date are provided
+  if (from_date && to_date) {
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(to_date + "T23:59:59");
+  } else if (from_date) {
+    // If only from_date is provided
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(); // Get all until now
+  } else if (to_date) {
+    // If only to_date is provided
+    startDate = new Date("1970-01-01T00:00:00"); // Get all from the beginning of time
+    endDate = new Date(to_date + "T23:59:59");
+  }
+
+  try {
+    // Fetch total order count, total volume, and total amountOfProduct from the Orders table
+    const orderStats = await Order.findAll({
+      where: {
+        delete_status: 0,
+        ...(startDate && endDate ? { createdAt: { [Op.between]: [startDate, endDate] } } : {})
+      },
+      attributes: [
+        [db.Sequelize.fn("COUNT", db.Sequelize.col("order_id")), "totalOrderCount"],
+        [db.Sequelize.fn("SUM", db.Sequelize.col("volume")), "totalVolume"],
+        [db.Sequelize.fn("SUM", db.Sequelize.col("amountOfProduct")), "totalAmountOfProduct"]
+      ],
+      raw: true
+    });
+
+    // Count each status from the OrderStatusHistory table where active_status is true and related to the filtered orders
+    const statusCounts = await OrderStatusHistory.findAll({
+      where: {
+        active_status: true
+      },
+      include: [
+        {
+          model: Order,
+          where: {
+            delete_status: 0,
+            ...(startDate && endDate ? { createdAt: { [Op.between]: [startDate, endDate] } } : {})
+          },
+          attributes: [] // We don't need any attributes from the Order table, just the filtering
+        }
+      ],
+      attributes: [
+        "order_status",
+        [db.Sequelize.fn("COUNT", db.Sequelize.col("OrderStatusHistory_id")), "count"]
+      ],
+      group: ["order_status"],
+      raw: true
+    });
+
+    // Get total operator count from the Operators table
+    const operatorStats = await Operator.findAll({
+      where: {
+        ...(startDate && endDate ? { createdAt: { [Op.between]: [startDate, endDate] } } : {})
+      },
+      attributes: [
+        [db.Sequelize.fn("COUNT", db.Sequelize.col("operator_id")), "totalOperatorCount"]
+      ],
+      raw: true
+    });
+
+    // Get total customer count from the Customers table
+    const customerStats = await Customer.findAll({
+      where: {
+        ...(startDate && endDate ? { createdAt: { [Op.between]: [startDate, endDate] } } : {})
+      },
+      attributes: [
+        [db.Sequelize.fn("COUNT", db.Sequelize.col("customer_id")), "totalCustomerCount"]
+      ],
+      raw: true
+    });
+
+    // Structure the result to make it easier to read
+    const result = {
+      totalOrderCount: orderStats[0].totalOrderCount || 0,
+      totalVolume: orderStats[0].totalVolume || 0,
+      totalAmountOfProduct: orderStats[0].totalAmountOfProduct || 0,
+      statusCounts: {
+        ordered: 0,
+        shipped: 0,
+        delivered: 0
+      },
+      totalOperatorCount: operatorStats[0].totalOperatorCount || 0,
+      totalCustomerCount: customerStats[0].totalCustomerCount || 0
+    };
+
+    // Update status counts based on the query result
+    statusCounts.forEach((status) => {
+      if (status.order_status === "ordered") {
+        result.statusCounts.ordered = status.count;
+      } else if (status.order_status === "shipped") {
+        result.statusCounts.shipped = status.count;
+      } else if (status.order_status === "delivered") {
+        result.statusCounts.delivered = status.count;
+      }
+    });
+
+    RESPONSE.Success.Message = "Overall dashboard statistics retrieved successfully.";
+    RESPONSE.Success.data = result;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("getOverallDashboardStats:", error);
+    RESPONSE.Failure.Message = error.message || "An error occurred while fetching dashboard statistics.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+
+
+exports.getOrdersByStatusWithFilter = async (req, res) => {
+  const { from_date, to_date, status } = req.body; // Get the date range from the request body
+
+  // Initialize date variables
+  let startDate;
+  let endDate;
+
+  // If both from_date and to_date are provided
+  if (from_date && to_date) {
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(to_date + "T23:59:59");
+  } else if (from_date) {
+    // If only from_date is provided
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(); // Get all until now
+  } else if (to_date) {
+    // If only to_date is provided
+    startDate = new Date("1970-01-01T00:00:00"); // Get all from the beginning of time
+    endDate = new Date(to_date + "T23:59:59");
+  }
+
+  try {
+    const orders = await OrderStatusHistory.findAll({
+      where: {
+        active_status: true,
+        order_status: status, // Use the status provided in the request
+      },
+      include: [
+        {
+          model: Order,
+          where: {
+            delete_status: 0,
+            ...(startDate && endDate
+              ? { createdAt: { [Op.between]: [startDate, endDate] } }
+              : {}),
+          },
+        },
+      ],
+    });
+
+    RESPONSE.Success.Message = `Orders with status '${status}' retrieved successfully.`;
+    RESPONSE.Success.data = orders;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("getOrdersByStatus:", error);
+    RESPONSE.Failure.Message =
+      error.message || "An error occurred while fetching orders by status.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+              -----------------or----------------------
+
+exports.getShippedStatusOrdersWithFilter = async (req, res) => {
+  const { from_date, to_date, status } = req.body; // Get the date range from the request body
+
+  // Initialize date variables
+  let startDate;
+  let endDate;
+
+  // If both from_date and to_date are provided
+  if (from_date && to_date) {
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(to_date + "T23:59:59");
+  } else if (from_date) {
+    // If only from_date is provided
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(); // Get all until now
+  } else if (to_date) {
+    // If only to_date is provided
+    startDate = new Date("1970-01-01T00:00:00"); // Get all from the beginning of time
+    endDate = new Date(to_date + "T23:59:59");
+  }
+
+  try {
+    // Fetch all "shipped" status orders for the given customer
+    const orders = await Order.findAll({
+      where: {
+        order_status: status,
+        delete_status: 0,
+        ...(startDate && endDate
+          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          : {}),
+      },
+    });
+
+    // Check if no orders are found
+    // if (orders.length === 0) {
+    //   return res.status(404).json({
+    //     message: "No 'shipped' status orders found for the specified customer.",
+    //   });
+    // }
+
+    RESPONSE.Success.Message =
+      "'Shipped' status orders retrieved successfully.";
+    RESPONSE.Success.data = orders;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    // res.status(200).json({
+    //   message: "'Shipped' status orders retrieved successfully.",
+    //   data: orders,
+    // });
+  } catch (error) {
+    console.error("getShippedStatusOrdersForCustomer:", error);
+    RESPONSE.Failure.Message =
+      error.message ||
+      "An error occurred while fetching 'shipped' status orders.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+    // res.status(500).json({
+    //   message: "An error occurred while fetching 'shipped' status orders.",
+    //   error: error.message,
+    // });
+  }
+};
+
+
+=============================
+
+it retrieves the actual data instead of counts,
+
+exports.getDashboardDetailsForCustomerWithFilter = async (req, res) => {
+  const { customer_id } = req.params;
+  const { from_date, to_date } = req.body;
+
+  // Initialize date variables
+  let startDate;
+  let endDate;
+
+  // If both from_date and to_date are provided
+  if (from_date && to_date) {
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(to_date + "T23:59:59");
+  } else if (from_date) {
+    // If only from_date is provided
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(); // Get all until now
+  } else if (to_date) {
+    // If only to_date is provided
+    startDate = new Date("1970-01-01T00:00:00"); // Get all from the beginning of time
+    endDate = new Date(to_date + "T23:59:59");
+  }
+
+  try {
+    // Check if the customer exists
+    const customerExists = await Customer.findOne({
+      where: { customer_id },
+    });
+
+    if (!customerExists) {
+      RESPONSE.Failure.Message = "Customer not found.";
+      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+    }
+
+    // Retrieve all orders for the customer within the date range
+    const orders = await Order.findAll({
+      where: {
+        customer_id,
+        delete_status: 0,
+        ...(startDate && endDate
+          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          : {}),
+      },
+      attributes: [
+        "order_id",
+        "volume",
+        "amountOfProduct",
+        "createdAt",
+        "updatedAt",
+        "delete_status",
+      ],
+      raw: true,
+    });
+
+    // Retrieve all statuses for the customer's orders within the date range
+    const orderStatuses = await OrderStatusHistory.findAll({
+      include: [
+        {
+          model: Order,
+          where: {
+            customer_id,
+            delete_status: 0,
+            ...(startDate && endDate
+              ? { createdAt: { [Op.between]: [startDate, endDate] } }
+              : {}),
+          },
+          attributes: [], // No need to return Order attributes again here
+        },
+      ],
+      where: { active_status: true },
+      attributes: [
+        "order_status",
+        "OrderStatusHistory_id",
+        "createdAt",
+        "updatedAt",
+      ],
+      raw: true,
+    });
+
+    // Structure the result to include the retrieved data
+    const result = {
+      orders: orders || [],
+      orderStatuses: orderStatuses || [],
+    };
+
+    RESPONSE.Success.Message = "Dashboard details retrieved successfully.";
+    RESPONSE.Success.data = result;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("getDashboardDetailsForCustomerWithFilter:", error);
+    RESPONSE.Failure.Message =
+      error.message || "An error occurred while fetching dashboard details.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};

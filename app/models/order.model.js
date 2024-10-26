@@ -63,6 +63,14 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.FLOAT,
       allowNull: false,
     },
+    amountOfProduct:{
+      type: Sequelize.FLOAT,
+      allowNull: false,
+    },
+    paymentProofImages:{
+      type: Sequelize.JSON, // Store options as a JSON array
+      allowNull: true,
+    },
     station: {
       // Station (delivery address)
       type: Sequelize.STRING,
