@@ -37,6 +37,8 @@ router.get("/getManagerById/:manager_id", managerController.getManagerById);
 
 // operator Routes
 router.post("/register/operator", operatorController.registerOperator);
+
+router.post("/register/checkOperatorExistForRegister", operatorController.checkOperatorExistForRegister);
 router.post("/login/operator", operatorController.loginOperator);
 router.post(
   "/updateApprovelForOperator",
@@ -52,6 +54,8 @@ router.get(
 // this api for dropdown that give customer assign that time we have to show only Approved operator
 router.get("/getApprovedOperators", operatorController.getApprovedOperators);
 
+router.get("/getPendingOperators", operatorController.getPendingOperators);
+
 router.get("/getOperatorById/:operator_id", operatorController.getOperatorById);
 
 router.get("/getAllOperatorsWithCustomerDetails", operatorController.getAllOperatorsWithCustomerDetails);
@@ -62,6 +66,8 @@ router.put("/editOperatorInfo/:operator_id", operatorController.editOperatorInfo
 
 // customer Routes
 router.post("/register/customer", customerController.registerCustomer);
+
+router.post("/register/checkCustomerExistForRegister", customerController.checkCustomerExistForRegister);
 router.post("/login/customer", customerController.loginCustomer);
 router.get(
   "/getAllCustomersWithOperatorsDetails",

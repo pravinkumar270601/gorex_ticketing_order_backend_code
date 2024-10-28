@@ -8,25 +8,69 @@ const RESPONSE = require("../constants/response");
 const { MESSAGE } = require("../constants/message");
 const { StatusCode } = require("../constants/HttpStatusCode");
 
+exports.checkCustomerExistForRegister = async (req, res) => {
+  try {
+    const { email, phone } = req.body;
+    // Check if the email already exists
+    const emailExists = await Customer.findOne({ where: { email } });
+    if (emailExists) {
+      RESPONSE.Success.Message = "Email already exists.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
+    // Check if the phone number already exists
+    const phoneExists = await Customer.findOne({ where: { phone } });
+    if (phoneExists) {
+      RESPONSE.Success.Message = "Phone number already exists.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+    RESPONSE.Success.Message = "Success";
+    RESPONSE.Success.data = [];
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("checkCustomerExistForRegister:", error);
+    RESPONSE.Failure.Message =
+      error.message || "Error checkCustomerExistForRegister manager";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
 // Registration
 // exports.registerCustomer = async (req, res) => {
 //   try {
 //     const { name, email, phone, password } = req.body;
 
-//     // Check if email or phone number already exists
-//     const existingCustomer = await Customer.findOne({
-//       where: {
-//         [Op.or]: [{ email }, { phone }],
-//       },
-//     });
+//     // // Check if email or phone number already exists
+//     // const existingCustomer = await Customer.findOne({
+//     //   where: {
+//     //     [Op.or]: [{ email }, { phone }],
+//     //   },
+//     // });
 
-//     if (existingCustomer) {
-//       RESPONSE.Success.Message = "Email or phone number already exists.";
+//     // if (existingCustomer) {
+//     //   RESPONSE.Success.Message = "Email or phone number already exists.";
+//     //   RESPONSE.Success.data = {};
+//     //   return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+//     //   // return res
+//     //   //   .status(400)
+//     //   //   .json({ message: "Email or phone number already exists." });
+//     // }
+
+//     const emailExists = await Customer.findOne({ where: { email } });
+//     if (emailExists) {
+//       RESPONSE.Success.Message = "Email already exists.";
 //       RESPONSE.Success.data = {};
 //       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-//       // return res
-//       //   .status(400)
-//       //   .json({ message: "Email or phone number already exists." });
+//     }
+
+//     // Check if the phone number already exists
+//     const phoneExists = await Customer.findOne({ where: { phone } });
+//     if (phoneExists) {
+//       RESPONSE.Success.Message = "Phone number already exists.";
+//       RESPONSE.Success.data = {};
+//       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
 //     }
 
 //     const customer = await Customer.create({ name, email, phone, password });
@@ -46,7 +90,7 @@ const { StatusCode } = require("../constants/HttpStatusCode");
 //   }
 // };
 
-// Registration
+// Registration with otp
 exports.registerCustomer = async (req, res) => {
   try {
     const { name, email, phone, password, profileImage, otp } = req.body;

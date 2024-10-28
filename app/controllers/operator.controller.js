@@ -8,25 +8,84 @@ const { StatusCode } = require("../constants/HttpStatusCode");
 const CustomerOperator = db.customerOperator;
 const Customer = db.customers;
 
+exports.checkOperatorExistForRegister = async (req, res) => {
+  try {
+    const {email, phone } = req.body;
+    // Check if the email already exists
+    const emailExists = await Operator.findOne({ where: { email } });
+    if (emailExists) {
+      RESPONSE.Success.Message = "Email already exists.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
+    // Check if the phone number already exists
+    const phoneExists = await Operator.findOne({ where: { phone } });
+    if (phoneExists) {
+      RESPONSE.Success.Message = "Phone number already exists.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+    RESPONSE.Success.Message = "Success";
+    RESPONSE.Success.data = [];
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+
+  } catch (error) {
+    console.error("checkOperatorExistForregister:", error);
+    RESPONSE.Failure.Message = error.message || "Error checkOperatorExistForregister manager";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+    
+  }
+};
+
 // Registration
 // exports.registerOperator = async (req, res) => {
 //   try {
 //     const { name, email, phone, password, profileImage } = req.body;
 
 //     // Check if email or phone number already exists
-//     const existingOperator = await Operator.findOne({
-//       where: {
-//         [Op.or]: [{ email }, { phone }],
-//       },
-//     });
+//     // const existingOperator = await Operator.findOne({
+//     //   where: {
+//     //     [Op.or]: [{ email }, { phone }],
+//     //   },
+//     // });
 
-//     if (existingOperator) {
-//       RESPONSE.Success.Message = "Email or phone number already exists.";
+//     // if (existingOperator) {
+//     //   RESPONSE.Success.Message = "Email or phone number already exists.";
+//     //   RESPONSE.Success.data = {};
+//     //   return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+//     //   // return res
+//     //   //   .status(400)
+//     //   //   .json({ message: "Email or phone number already exists." });
+//     // }
+
+//     // Check if email or phone number already exists
+//     // const existingOperator = await Operator.findOne({
+//     //   where: {
+//     //     [Op.or]: [{ email }, { phone }],
+//     //   },
+//     // });
+
+//     // if (existingOperator) {
+//     //   RESPONSE.Success.Message = "Email or phone number already exists.";
+//     //   RESPONSE.Success.data = {};
+//     //   return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+//     // }
+
+//     // Check if the email already exists
+//     const emailExists = await Operator.findOne({ where: { email } });
+//     if (emailExists) {
+//       RESPONSE.Success.Message = "Email already exists.";
 //       RESPONSE.Success.data = {};
 //       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-//       // return res
-//       //   .status(400)
-//       //   .json({ message: "Email or phone number already exists." });
+//     }
+
+//     // Check if the phone number already exists
+//     const phoneExists = await Operator.findOne({ where: { phone } });
+//     if (phoneExists) {
+//       RESPONSE.Success.Message = "Phone number already exists.";
+//       RESPONSE.Success.data = {};
+//       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
 //     }
 
 //     const operator = await Operator.create({
@@ -54,7 +113,7 @@ const Customer = db.customers;
 //   }
 // };
 
-// Registration
+// Registration with otp
 exports.registerOperator = async (req, res) => {
   try {
     const { name, email, phone, password, profileImage, otp } = req.body;
@@ -159,25 +218,24 @@ exports.editOperatorInfo = async (req, res) => {
       }
     }
 
+    // Next, check if the new phone number already exists
+    if (newPhone) {
+      const phoneExists = await Operator.findOne({
+        where: {
+          phone: newPhone,
+          customer_id: { [Op.ne]: operatorId }, // Exclude current customer by ID
+        },
+      });
 
-        // Next, check if the new phone number already exists
-        if (newPhone) {
-          const phoneExists = await Operator.findOne({
-            where: {
-              phone: newPhone,
-              customer_id: { [Op.ne]: operatorId }, // Exclude current customer by ID
-            },
-          });
-    
-          if (phoneExists) {
-            RESPONSE.Success.Message =
-              "The new phone number is already in use by another customer.";
-            RESPONSE.Success.data = {};
-            return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-            // RESPONSE.Failure.Message = "The new phone number is already in use by another customer.";
-            // return res.status(StatusCode.CONFLICT?.code || 409).send(RESPONSE.Failure);
-          }
-        }
+      if (phoneExists) {
+        RESPONSE.Success.Message =
+          "The new phone number is already in use by another customer.";
+        RESPONSE.Success.data = {};
+        return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+        // RESPONSE.Failure.Message = "The new phone number is already in use by another customer.";
+        // return res.status(StatusCode.CONFLICT?.code || 409).send(RESPONSE.Failure);
+      }
+    }
 
     // Verify OTP
     const otpData = await OTP.findOne({ where: { email, otp } });
@@ -458,15 +516,60 @@ exports.getApprovedOperators = async (req, res) => {
     });
 
     if (operators.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No operators found with the specified status." });
+      RESPONSE.Success.Message =
+        "No operators found with the specified status.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      // return res
+      //   .status(404)
+      //   .json({ message: "No operators found with the specified status." });
     }
 
-    res.status(200).json({ operators });
+    RESPONSE.Success.Message = "getApprovedOperators succesfully";
+    RESPONSE.Success.data = operators;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    // res.status(200).json({ operators });
   } catch (error) {
     console.error("getOperatorsByStatus:", error);
-    res.status(500).json({ message: "Error fetching operators by status." });
+    RESPONSE.Failure.Message = error.message || "Error approving operator.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+    // console.error("getOperatorsByStatus:", error);
+    // res.status(500).json({ message: "Error fetching operators by status." });
+  }
+};
+
+exports.getPendingOperators = async (req, res) => {
+  try {
+    // const { status } = req.query; // Query parameter for approval status (pending, approved, or rejected)
+
+    // Fetch operators based on the provided status
+    const operators = await Operator.findAll({
+      // where: { approval_status: status }
+
+      where: { approval_status: "pending" },
+    });
+
+    if (operators.length === 0) {
+      RESPONSE.Success.Message =
+        "No operators found with the specified status.";
+      RESPONSE.Success.data = [];
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      // return res
+      //   .status(404)
+      //   .json({ message: "No operators found with the specified status." });
+    }
+
+    RESPONSE.Success.Message = "getPendingOperators succesfully";
+    RESPONSE.Success.data = operators;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    // res.status(200).json({ operators });
+  } catch (error) {
+    console.error("getPendingOperators:", error);
+    RESPONSE.Failure.Message =
+      error.message || "Error fetching operators by status.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+    // console.error("getOperatorsByStatus:", error);
+    // res.status(500).json({ message: "Error fetching operators by status." });
   }
 };
 
