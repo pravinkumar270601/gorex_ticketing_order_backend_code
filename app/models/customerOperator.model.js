@@ -46,6 +46,14 @@ module.exports = (sequelize, Sequelize) => {
           return format(this.getDataValue("createdAt"), "dd-MM-yyyy HH:mm:ss");
         },
       },
+      deletedAt: {
+        type: Sequelize.DATE,
+        allowNull: true, // Optional field, initially null
+        defaultValue: null,
+        get() {
+          return format(this.getDataValue("deletedAt"), "dd-MM-yyyy HH:mm:ss");
+        },
+      },
     });
   
     return CustomerOperator;

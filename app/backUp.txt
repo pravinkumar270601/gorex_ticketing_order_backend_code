@@ -490,3 +490,57 @@ exports.getDashboardDetailsForCustomerWithFilter = async (req, res) => {
     res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };
+
+
+====================================================================
+
+exports.getCustomersWithNewFilter = async (req, res) => {
+  // const { customer_id } = req.params; // Ensure operator_id is used only if it’s a field in Customer
+  const { from_date, to_date } = req.body;
+
+  let startDate, endDate;
+
+  if (from_date && to_date) {
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date(to_date + "T23:59:59");
+  } else if (from_date) {
+    startDate = new Date(from_date + "T00:00:00");
+    endDate = new Date();
+  } else if (to_date) {
+    startDate = new Date("1970-01-01T00:00:00");
+    endDate = new Date(to_date + "T23:59:59");
+  }
+
+  try {
+    const customers = await Customer.findAll({
+      where: {
+        // customer_id,
+        // ...(customer_id ? { customer_id } : {}), // Only include if operator_id is needed as a filter
+        // delete_status: 0, // Assumes delete_status exists on Customer
+        ...(startDate && endDate
+          ? {
+              [Op.and]: [
+                { createdAt: { [Op.lte]: endDate } },
+                {
+                  [Op.or]: [
+                    { deletedAt: null },
+                    { deletedAt: { [Op.gte]: startDate } },
+                  ],
+                },
+              ],
+            }
+          : {}),
+      },
+      attributes: ["customer_id", "name", "email", "phone"], // Selecting fields directly from Customer
+    });
+
+    RESPONSE.Success.Message = "Customers retrieved successfully.";
+    RESPONSE.Success.data = customers;
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("getCustomersForOperator:", error);
+    RESPONSE.Failure.Message =
+      error.message || "An error occurred while fetching the customers.";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};

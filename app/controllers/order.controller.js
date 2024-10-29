@@ -511,8 +511,15 @@ exports.getAllOrdersForOperator = async (req, res) => {
 
     // Check if any orders are found
     if (!orders || orders.length === 0) {
-      RESPONSE.Failure.Message = "No orders found for the specified operator.";
-      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+
+      RESPONSE.Success.Message = "No orders found for the specified operator.";
+      RESPONSE.Success.data = [];
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+
+      // RESPONSE.Failure.Message = "No orders found for the specified operator.";
+      // return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+
+
       // return res.status(404).json({
       //   Status: false,
       //   Success: false,
@@ -556,8 +563,11 @@ exports.getAllOrdersByCustomer = async (req, res) => {
 
     // Check if any orders were found
     if (orders.length === 0) {
-      RESPONSE.Failure.Message = "No orders found for this customer.";
-      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+      RESPONSE.Success.Message = "No orders found for this customer.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      // RESPONSE.Failure.Message = "No orders found for this customer.";
+      // return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
       // return res.status(404).json({
       //   message: "No orders found for this customer.",
       // });
