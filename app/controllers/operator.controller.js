@@ -39,84 +39,25 @@ exports.checkOperatorExistForRegister = async (req, res) => {
 };
 
 // Registration
-exports.registerOperator = async (req, res) => {
-  try {
-    const { name, email, phone, password, profileImage } = req.body;
-
-    // Check if email or phone number already exists
-    // const existingOperator = await Operator.findOne({
-    //   where: {
-    //     [Op.or]: [{ email }, { phone }],
-    //   },
-    // });
-
-    // if (existingOperator) {
-    //   RESPONSE.Success.Message = "Email or phone number already exists.";
-    //   RESPONSE.Success.data = {};
-    //   return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-    //   // return res
-    //   //   .status(400)
-    //   //   .json({ message: "Email or phone number already exists." });
-    // }
-
-    // Check if email or phone number already exists
-    // const existingOperator = await Operator.findOne({
-    //   where: {
-    //     [Op.or]: [{ email }, { phone }],
-    //   },
-    // });
-
-    // if (existingOperator) {
-    //   RESPONSE.Success.Message = "Email or phone number already exists.";
-    //   RESPONSE.Success.data = {};
-    //   return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-    // }
-
-    // Check if the email already exists
-    const emailExists = await Operator.findOne({ where: { email } });
-    if (emailExists) {
-      RESPONSE.Success.Message = "Email already exists.";
-      RESPONSE.Success.data = {};
-      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-    }
-
-    // Check if the phone number already exists
-    const phoneExists = await Operator.findOne({ where: { phone } });
-    if (phoneExists) {
-      RESPONSE.Success.Message = "Phone number already exists.";
-      RESPONSE.Success.data = {};
-      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-    }
-
-    const operator = await Operator.create({
-      name,
-      email,
-      phone,
-      password,
-      profileImage,
-      approval_status: "pending",
-    });
-    RESPONSE.Success.Message =
-      "Operator registration successful. Waiting for admin approval.";
-    RESPONSE.Success.data = operator;
-    res.status(StatusCode.CREATED.code).send(RESPONSE.Success);
-    // res
-    //   .status(201)
-    //   .json({ message: "Operator registered successfully", operator });
-  } catch (error) {
-    console.error("registerOperator:", error);
-    RESPONSE.Failure.Message = error.message || "Error registering manager";
-    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
-    // res
-    //   .status(500)
-    //   .json({ message: "Error registering operator", error: error.message });
-  }
-};
-
-// Registration with otp
 // exports.registerOperator = async (req, res) => {
 //   try {
-//     const { name, email, phone, password, profileImage, otp } = req.body;
+//     const { name, email, phone, password, profileImage } = req.body;
+
+//     // Check if email or phone number already exists
+//     // const existingOperator = await Operator.findOne({
+//     //   where: {
+//     //     [Op.or]: [{ email }, { phone }],
+//     //   },
+//     // });
+
+//     // if (existingOperator) {
+//     //   RESPONSE.Success.Message = "Email or phone number already exists.";
+//     //   RESPONSE.Success.data = {};
+//     //   return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+//     //   // return res
+//     //   //   .status(400)
+//     //   //   .json({ message: "Email or phone number already exists." });
+//     // }
 
 //     // Check if email or phone number already exists
 //     // const existingOperator = await Operator.findOne({
@@ -147,24 +88,6 @@ exports.registerOperator = async (req, res) => {
 //       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
 //     }
 
-//     // Verify OTP
-//     const otpData = await OTP.findOne({ where: { email, otp } });
-
-//     if (!otpData) {
-//       RESPONSE.Success.Message = MESSAGE.INVALID_OTP;
-//       RESPONSE.Success.data = {};
-//       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-//     }
-
-//     // Check if the OTP is expired
-//     if (otpData.expiresAt < Date.now()) {
-//       await OTP.destroy({ where: { email, otp } }); // Remove expired OTP
-//       RESPONSE.Success.Message = MESSAGE.OTP_EXPIRED;
-//       RESPONSE.Success.data = {};
-//       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-//     }
-
-//     // Create the operator if OTP is valid
 //     const operator = await Operator.create({
 //       name,
 //       email,
@@ -173,20 +96,97 @@ exports.registerOperator = async (req, res) => {
 //       profileImage,
 //       approval_status: "pending",
 //     });
-
-//     // Delete OTP after successful verification
-//     await OTP.destroy({ where: { email, otp } });
-
 //     RESPONSE.Success.Message =
 //       "Operator registration successful. Waiting for admin approval.";
 //     RESPONSE.Success.data = operator;
 //     res.status(StatusCode.CREATED.code).send(RESPONSE.Success);
+//     // res
+//     //   .status(201)
+//     //   .json({ message: "Operator registered successfully", operator });
 //   } catch (error) {
 //     console.error("registerOperator:", error);
-//     RESPONSE.Failure.Message = error.message || "Error registering operator";
+//     RESPONSE.Failure.Message = error.message || "Error registering manager";
 //     res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+//     // res
+//     //   .status(500)
+//     //   .json({ message: "Error registering operator", error: error.message });
 //   }
 // };
+
+// Registration with otp
+exports.registerOperator = async (req, res) => {
+  try {
+    const { name, email, phone, password, profileImage, otp } = req.body;
+
+    // Check if email or phone number already exists
+    // const existingOperator = await Operator.findOne({
+    //   where: {
+    //     [Op.or]: [{ email }, { phone }],
+    //   },
+    // });
+
+    // if (existingOperator) {
+    //   RESPONSE.Success.Message = "Email or phone number already exists.";
+    //   RESPONSE.Success.data = {};
+    //   return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    // }
+
+    // Check if the email already exists
+    const emailExists = await Operator.findOne({ where: { email } });
+    if (emailExists) {
+      RESPONSE.Success.Message = "Email already exists.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
+    // Check if the phone number already exists
+    const phoneExists = await Operator.findOne({ where: { phone } });
+    if (phoneExists) {
+      RESPONSE.Success.Message = "Phone number already exists.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
+    // Verify OTP
+    const otpData = await OTP.findOne({ where: { email, otp } });
+
+    if (!otpData) {
+      RESPONSE.Success.Message = MESSAGE.INVALID_OTP;
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
+    // Check if the OTP is expired
+    if (otpData.expiresAt < Date.now()) {
+      await OTP.destroy({ where: { email, otp } }); // Remove expired OTP
+      RESPONSE.Success.Message = MESSAGE.OTP_EXPIRED;
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
+    // Create the operator if OTP is valid
+    const operator = await Operator.create({
+      name,
+      email,
+      phone,
+      password,
+      profileImage,
+      approval_status: "pending",
+    });
+
+    // Delete OTP after successful verification
+    await OTP.destroy({ where: { email, otp } });
+
+    RESPONSE.Success.Message =
+      "Operator registration successful. Waiting for admin approval.";
+    RESPONSE.Success.data = operator;
+    res.status(StatusCode.CREATED.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("registerOperator:", error);
+    RESPONSE.Failure.Message = error.message || "Error registering operator";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
 
 // Edit operator information after verifying OTP
 exports.editOperatorInfo = async (req, res) => {
@@ -297,46 +297,6 @@ exports.editOperatorInfo = async (req, res) => {
     return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };
-
-
-// Soft delete operator by setting delete_status to 1 and updating deletedAt
-exports.deleteOperator = async (req, res) => {
-  try {
-    const operatorId = req.params.operator_id; // Get operator_id from request parameters
-
-    // Find the operator by ID
-    const operator = await Operator.findOne({ where: { operator_id: operatorId } });
-
-    if (!operator) {
-      RESPONSE.Failure.Message = "Operator not found.";
-      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
-    }
-
-    // Check if the operator is already soft deleted
-    if (operator.delete_status === 1) {
-      RESPONSE.Failure.Message = "Operator is already deleted.";
-      return res.status(StatusCode.OK.code).send(RESPONSE.Failure);
-    }
-
-    // Perform soft delete by updating the delete_status and deletedAt fields
-    await Operator.update(
-      {
-        delete_status: 1,
-        deletedAt: new Date(), // Set current timestamp as the deleted time
-      },
-      { where: { operator_id: operatorId } }
-    );
-
-    RESPONSE.Success.Message = "Operator soft deleted successfully.";
-    RESPONSE.Success.data = {};
-    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-  } catch (error) {
-    console.error("Error in deleting operator:", error);
-    RESPONSE.Failure.Message = error.message || "Failed to delete operator.";
-    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
-  }
-};
-
 
 // Get operator details by operator_id
 exports.getOperatorById = async (req, res) => {
@@ -558,7 +518,7 @@ exports.getApprovedOperators = async (req, res) => {
     if (operators.length === 0) {
       RESPONSE.Success.Message =
         "No operators found with the specified status.";
-      RESPONSE.Success.data = {};
+      RESPONSE.Success.data = [];
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
       // return res
       //   .status(404)

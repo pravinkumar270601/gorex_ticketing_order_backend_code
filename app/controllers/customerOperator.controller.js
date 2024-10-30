@@ -287,116 +287,48 @@ exports.deleteAssignment = async (req, res) => {
 };
 
 // Update the operator assignment for a customer
-// exports.updateOperatorAssignment = async (req, res) => {
-//   const { customer_id, operator_id } = req.body;
-
-//   try {
-//     // Update the operator_id to the new value or null
-//     const [updatedRows] = await CustomerOperator.update(
-//       { operator_id },
-//       { where: { customer_id, delete_status: 0 } }
-//     );
-
-//     if (updatedRows === 0) {
-//       // Check if the assignment exists but the operator_id is already the same
-//       const existingAssignment = await CustomerOperator.findOne({
-//         where: { customer_id, delete_status: 0 },
-//       });
-
-//       if (
-//         existingAssignment &&
-//         existingAssignment.operator_id === operator_id
-//       ) {
-//         RESPONSE.Success.Message =
-//           "No changes detected. The operator assignment is already up to date.";
-//         RESPONSE.Success.data = {};
-//         res.status(StatusCode.OK.code).send(RESPONSE.Success);
-//         // return res.status(200).json({
-//         //   message:
-//         //     "No changes detected. The operator assignment is already up to date.",
-//         // });
-//       } else {
-//         RESPONSE.Failure.Message =
-//           "Customer assignment not found or already deleted.";
-//         return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
-//         // return res.status(404).json({
-//         //   message: "Customer assignment not found or already deleted.",
-//         // });
-//       }
-//       // return res
-//       //   .status(404)
-//       //   .json({ message: "Customer assignment not found or already deleted." });
-//     }
-
-//     // Update all orders with a null operator_id for the given customer_id
-//     await Order.update(
-//       { operator_id },
-//       {
-//         where: { customer_id, operator_id: null, delete_status: 0 },
-//       }
-//     );
-
-//     RESPONSE.Success.Message =
-//       operator_id === null
-//         ? "Operator assignment removed successfully."
-//         : "Operator assignment updated successfully.";
-//     RESPONSE.Success.data = {};
-//     res.status(StatusCode.OK.code).send(RESPONSE.Success);
-//     // res.status(200).json({
-//     //   message:
-//     //     operator_id === null
-//     //       ? "Operator assignment removed successfully."
-//     //       : "Operator assignment updated successfully.",
-//     // });
-//   } catch (error) {
-//     console.error("updateOperatorAssignment:", error);
-//     RESPONSE.Failure.Message =
-//       error.message || "An error occurred while updating the assignment";
-//     res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
-//     // res.status(500).json({
-//     //   message: "An error occurred while updating the operator assignment.",
-//     //   error: error.message,
-//     // });
-//   }
-// };
-
-/// Update the operator assignment for a customer with 
-// new logic of deteleAt with time for filer 
 exports.updateOperatorAssignment = async (req, res) => {
   const { customer_id, operator_id } = req.body;
 
   try {
-    // Find the existing active assignment
-    const existingAssignment = await CustomerOperator.findOne({
-      where: { customer_id, delete_status: 0 },
-    });
+    // Update the operator_id to the new value or null
+    const [updatedRows] = await CustomerOperator.update(
+      { operator_id },
+      { where: { customer_id, delete_status: 0 } }
+    );
 
-    // Check if the assignment already exists with the same operator_id
-    if (existingAssignment && existingAssignment.operator_id === operator_id) {
-      RESPONSE.Success.Message = "No changes detected. The operator assignment is already up to date.";
-      RESPONSE.Success.data = {};
-      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    if (updatedRows === 0) {
+      // Check if the assignment exists but the operator_id is already the same
+      const existingAssignment = await CustomerOperator.findOne({
+        where: { customer_id, delete_status: 0 },
+      });
+
+      if (
+        existingAssignment &&
+        existingAssignment.operator_id === operator_id
+      ) {
+        RESPONSE.Success.Message =
+          "No changes detected. The operator assignment is already up to date.";
+        RESPONSE.Success.data = {};
+        res.status(StatusCode.OK.code).send(RESPONSE.Success);
+        // return res.status(200).json({
+        //   message:
+        //     "No changes detected. The operator assignment is already up to date.",
+        // });
+      } else {
+        RESPONSE.Failure.Message =
+          "Customer assignment not found or already deleted.";
+        return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+        // return res.status(404).json({
+        //   message: "Customer assignment not found or already deleted.",
+        // });
+      }
+      // return res
+      //   .status(404)
+      //   .json({ message: "Customer assignment not found or already deleted." });
     }
 
-    // If there is an existing assignment, soft delete it
-    if (existingAssignment) {
-      await CustomerOperator.update(
-        {
-          delete_status: 1,
-          deletedAt: new Date(), // Set the deleted date
-        },
-        { where: { customer_id, delete_status: 0 } }
-      );
-    }
-
-    // Create a new assignment with the updated operator_id
-    const newAssignment = await CustomerOperator.create({
-      customer_id,
-      operator_id,
-      delete_status: 0, // Set as active
-    });
-
-    // Optionally, update orders related to the customer
+    // Update all orders with a null operator_id for the given customer_id
     await Order.update(
       { operator_id },
       {
@@ -404,21 +336,29 @@ exports.updateOperatorAssignment = async (req, res) => {
       }
     );
 
-    RESPONSE.Success.Message = operator_id === null
-      ? "Operator assignment removed successfully."
-      : "Operator assignment updated successfully.";
-    RESPONSE.Success.data = { newAssignment };
+    RESPONSE.Success.Message =
+      operator_id === null
+        ? "Operator assignment removed successfully."
+        : "Operator assignment updated successfully.";
+    RESPONSE.Success.data = {};
     res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    // res.status(200).json({
+    //   message:
+    //     operator_id === null
+    //       ? "Operator assignment removed successfully."
+    //       : "Operator assignment updated successfully.",
+    // });
   } catch (error) {
     console.error("updateOperatorAssignment:", error);
-    RESPONSE.Failure.Message = error.message || "An error occurred while updating the assignment";
+    RESPONSE.Failure.Message =
+      error.message || "An error occurred while updating the assignment";
     res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+    // res.status(500).json({
+    //   message: "An error occurred while updating the operator assignment.",
+    //   error: error.message,
+    // });
   }
 };
-
-
-
-
 
 // Get customers based on operator_id
 exports.getCustomersByOperator = async (req, res) => {

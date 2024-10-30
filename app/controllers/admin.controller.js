@@ -107,44 +107,6 @@ exports.getAdminById = async (req, res) => {
   }
 };
 
-// Soft delete admin by setting delete_status to 1 and updating deletedAt
-exports.deleteAdmin = async (req, res) => {
-  try {
-    const adminId = req.params.admin_id; // Get admin_id from request parameters
-
-    // Find the admin by ID
-    const admin = await Admin.findOne({ where: { admin_id: adminId } });
-
-    if (!admin) {
-      RESPONSE.Failure.Message = "Admin not found.";
-      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
-    }
-
-    // Check if the admin is already soft deleted
-    if (admin.delete_status === 1) {
-      RESPONSE.Failure.Message = "Admin is already deleted.";
-      return res.status(StatusCode.OK.code).send(RESPONSE.Failure);
-    }
-
-    // Perform soft delete by updating the delete_status and deletedAt fields
-    await Admin.update(
-      {
-        delete_status: 1,
-        deletedAt: new Date(), // Set current timestamp as the deleted time
-      },
-      { where: { admin_id: adminId } }
-    );
-
-    RESPONSE.Success.Message = "Admin soft deleted successfully.";
-    RESPONSE.Success.data = {};
-    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-  } catch (error) {
-    console.error("Error in deleting admin:", error);
-    RESPONSE.Failure.Message = error.message || "Failed to delete admin.";
-    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
-  }
-};
-
 
 exports.getOverallDashboardStats = async (req, res) => {
   try {

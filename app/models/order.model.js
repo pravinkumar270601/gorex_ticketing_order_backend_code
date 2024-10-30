@@ -43,9 +43,9 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.DATEONLY,
       allowNull: false,
       get() {
-        const dateValue = this.getDataValue("required_date");
+        const dateValue = this.getDataValue('required_date');
         // Return formatted date if it exists, otherwise return null
-        return dateValue ? format(new Date(dateValue), "dd-MM-yyyy") : null;
+        return dateValue ? format(new Date(dateValue), 'dd-MM-yyyy') : null; 
       },
     },
     current_time: {
@@ -63,11 +63,11 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.FLOAT,
       allowNull: false,
     },
-    amountOfProduct: {
+    amountOfProduct:{
       type: Sequelize.FLOAT,
       allowNull: false,
     },
-    paymentProofImages: {
+    paymentProofImages:{
       type: Sequelize.JSON, // Store options as a JSON array
       allowNull: true,
     },
@@ -107,14 +107,6 @@ module.exports = (sequelize, Sequelize) => {
       defaultValue: Sequelize.NOW, // Automatically set the updated date
       get() {
         return format(this.getDataValue("createdAt"), "dd-MM-yyyy HH:mm:ss");
-      },
-    },
-    deletedAt: {
-      type: Sequelize.DATE,
-      allowNull: true, // Optional field, initially null
-      defaultValue: null,
-      get() {
-        return format(this.getDataValue("deletedAt"), "dd-MM-yyyy HH:mm:ss");
       },
     },
   });

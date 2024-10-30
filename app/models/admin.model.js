@@ -31,12 +31,6 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.STRING,
       allowNull: true, // Optional field
     },
-    delete_status: {
-      // Soft delete field (0 = active, 1 = deleted)
-      type: Sequelize.TINYINT,
-      allowNull: false,
-      defaultValue: 0, // Default is active (0)
-    },
     createdAt: {
       allowNull: false,
       type: Sequelize.DATE,
@@ -51,14 +45,6 @@ module.exports = (sequelize, Sequelize) => {
       defaultValue: Sequelize.NOW,
       get() {
         return format(this.getDataValue("createdAt"), "dd-MM-yyyy HH:mm:ss");
-      },
-    },
-    deletedAt: {
-      type: Sequelize.DATE,
-      allowNull: true, // Optional field, initially null
-      defaultValue: null,
-      get() {
-        return format(this.getDataValue("deletedAt"), "dd-MM-yyyy HH:mm:ss");
       },
     },
   });
