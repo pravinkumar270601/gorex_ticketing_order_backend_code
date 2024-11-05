@@ -12,7 +12,7 @@ exports.getAllOrderStatusHistoryByOrderId = async (req, res) => {
   try {
     // Retrieve all status history entries for the given order_id
     const statusHistory = await OrderStatusHistory.findAll({
-      where: { order_id },
+      where: { order_id,delete_status: 0, },
       order: [["timestamp", "DESC"]], // Order by timestamp descending
     });
 

@@ -38,7 +38,7 @@ db.orders = require("./order.model.js")(sequelize, Sequelize);
 db.customerOperator = require("./customerOperator.model.js")(sequelize, Sequelize);
 db.orderStatusHistory = require("./orderStatusHistory.model.js")(sequelize, Sequelize);
 db.otp = require("./otp.model.js")(sequelize, Sequelize);
-
+db.addresses =  require("./address.model.js")(sequelize, Sequelize);
 // Establish relationships
 
 

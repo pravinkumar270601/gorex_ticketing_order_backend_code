@@ -1,40 +1,33 @@
-const { format } = require("date-fns"); // Importing date-fns for formatting
+// models/address.model.js
+const { format } = require("date-fns");
 
-// models/operator.model.js
 module.exports = (sequelize, Sequelize) => {
-  const Operator = sequelize.define("operators", {
-    operator_id: {
+  const Address = sequelize.define("addresses", {
+    address_id: {
       allowNull: false,
       autoIncrement: true,
       primaryKey: true,
       type: Sequelize.INTEGER,
     },
-    name: {
+    state: {
       type: Sequelize.STRING,
       allowNull: false,
     },
-    email: {
-      type: Sequelize.STRING,
-      allowNull: false,
-      // unique: true,
-    },
-    phone: {
-      type: Sequelize.STRING,
-      allowNull: false,
-      // unique: true,
-    },
-    password: {
+    district: {
       type: Sequelize.STRING,
       allowNull: false,
     },
-    profileImage: {
-      type: Sequelize.STRING,
-      allowNull: true, // Optional field
-    },
-    approval_status: {
+    city: {
       type: Sequelize.STRING,
       allowNull: false,
-      defaultValue: "pending", // Default to "pending"
+    },
+    location: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+    station: {
+      type: Sequelize.STRING,
+      allowNull: false,
     },
     delete_status: {
       // Soft delete field (0 = active, 1 = deleted)
@@ -42,7 +35,6 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false,
       defaultValue: 0, // Default is active (0)
     },
-    
     createdAt: {
       allowNull: false,
       type: Sequelize.DATE,
@@ -56,7 +48,7 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.DATE,
       defaultValue: Sequelize.NOW,
       get() {
-        return format(this.getDataValue("createdAt"), "dd-MM-yyyy HH:mm:ss");
+        return format(this.getDataValue("updatedAt"), "dd-MM-yyyy HH:mm:ss");
       },
     },
     deletedAt: {
@@ -64,10 +56,11 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: true, // Optional field, initially null
       defaultValue: null,
       get() {
-        return format(this.getDataValue("deletedAt"), "dd-MM-yyyy HH:mm:ss");
+        const deletedAt = this.getDataValue("deletedAt");
+        return deletedAt ? format(deletedAt, "dd-MM-yyyy HH:mm:ss") : null;
       },
     },
   });
 
-  return Operator;
+  return Address;
 };

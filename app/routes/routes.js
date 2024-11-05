@@ -12,6 +12,7 @@ const dateFilterController = require("../controllers/dateFilter.controller.js");
 const router = require("express").Router();
 const isAuthenticated = require("../middleware/auth_middleware.js");
 const otpController = require("../controllers/otp.controller.js");
+const AddressesController = require("../controllers/address.controller.js");
 
 // uploads
 
@@ -29,16 +30,23 @@ router.get(
   "/getOverallDashboardStats",
   adminController.getOverallDashboardStats
 );
+router.delete("/deleteAdmin/:admin_id", adminController.deleteAdmin);
+
+router.put("/editAdminInfo/:admin_id", adminController.editAdminInfo);
 
 // manager Routes
 router.post("/register/manager", managerController.registerManager);
 router.post("/login/manager", managerController.loginManager);
 router.get("/getManagerById/:manager_id", managerController.getManagerById);
+router.delete("/deleteManager/:manager_id", managerController.deleteManager);
+router.put("/editManagerInfo/:manager_id", managerController.editManagerInfo);
 
 // operator Routes
 router.post("/register/operator", operatorController.registerOperator);
-
-router.post("/register/checkOperatorExistForRegister", operatorController.checkOperatorExistForRegister);
+router.post(
+  "/register/checkOperatorExistForRegister",
+  operatorController.checkOperatorExistForRegister
+);
 router.post("/login/operator", operatorController.loginOperator);
 router.post(
   "/updateApprovelForOperator",
@@ -53,21 +61,28 @@ router.get(
 );
 // this api for dropdown that give customer assign that time we have to show only Approved operator
 router.get("/getApprovedOperators", operatorController.getApprovedOperators);
-
 router.get("/getPendingOperators", operatorController.getPendingOperators);
-
 router.get("/getOperatorById/:operator_id", operatorController.getOperatorById);
-
-router.get("/getAllOperatorsWithCustomerDetails", operatorController.getAllOperatorsWithCustomerDetails);
-router.put("/editOperatorInfo/:operator_id", operatorController.editOperatorInfo);
-
-
-
+router.get(
+  "/getAllOperatorsWithCustomerDetails",
+  operatorController.getAllOperatorsWithCustomerDetails
+);
+router.put(
+  "/editOperatorInfo/:operator_id",
+  operatorController.editOperatorInfo
+);
+router.delete(
+  "/deleteOperator/:operator_id",
+  operatorController.deleteOperator
+);
 
 // customer Routes
 router.post("/register/customer", customerController.registerCustomer);
 
-router.post("/register/checkCustomerExistForRegister", customerController.checkCustomerExistForRegister);
+router.post(
+  "/register/checkCustomerExistForRegister",
+  customerController.checkCustomerExistForRegister
+);
 router.post("/login/customer", customerController.loginCustomer);
 router.get(
   "/getAllCustomersWithOperatorsDetails",
@@ -80,8 +95,14 @@ router.get(
 router.get("/getAllCustomers", customerController.getAllCustomers);
 router.get("/getCustomerById/:customer_id", customerController.getCustomerById);
 router.get("/getCustomerById/:customer_id", customerController.getCustomerById);
-router.put("/editCustomerInfo/:customer_id", customerController.editCustomerInfo);
-
+router.put(
+  "/editCustomerInfo/:customer_id",
+  customerController.editCustomerInfo
+);
+router.delete(
+  "/deleteCustomer/:customer_id",
+  customerController.deleteCustomer
+);
 // order Routes
 
 router.post("/createOrder", orderController.createOrder);
@@ -155,17 +176,25 @@ router.get(
   orderController.getDeliveredStatusOrdersForCustomer
 );
 
-router.get("/getAllOrderedStatusOrders", orderController.getAllOrderedStatusOrders);
+router.get(
+  "/getAllOrderedStatusOrders",
+  orderController.getAllOrderedStatusOrders
+);
 
-router.get("/getAllShippedStatusOrders", orderController.getAllShippedStatusOrders);
+router.get(
+  "/getAllShippedStatusOrders",
+  orderController.getAllShippedStatusOrders
+);
 
-router.get("/getAllDeliveredStatusOrders", orderController.getAllDeliveredStatusOrders);
+router.get(
+  "/getAllDeliveredStatusOrders",
+  orderController.getAllDeliveredStatusOrders
+);
 
-router.get("/getAllOrdersWithCustomerAndOperatorDetails", orderController.getAllOrdersWithCustomerAndOperatorDetails);
-
-
-
-
+router.get(
+  "/getAllOrdersWithCustomerAndOperatorDetails",
+  orderController.getAllOrdersWithCustomerAndOperatorDetails
+);
 
 // customerOperator Routes
 
@@ -197,22 +226,60 @@ router.get(
 
 // admin ===========>
 
-router.get("/getOverallDashboardStatsWithFilter", dateFilterController.getOverallDashboardStatsWithFilter);
-router.get("/getAllOrdersWithCustomerAndOperatorDetailsWithFilter", dateFilterController.getAllOrdersWithCustomerAndOperatorDetailsWithFilter);
-router.get("/getAllOrdersWithFilter", dateFilterController.getAllOrdersWithFilter);
-router.get("/getAllOperatorsWithCustomerDetailWithFilter", dateFilterController.getAllOperatorsWithCustomerDetailWithFilter);
-router.get("/getAllOperatorsWithFilter", dateFilterController.getAllOperatorsWithFilter);
-router.get("/getAllCustomersWithOperatorsDetailsWithFilter", dateFilterController.getAllCustomersWithOperatorsDetailsWithFilter);
-router.get("/getAllCustomersWithFilter", dateFilterController.getAllCustomersWithFilter);
+router.get(
+  "/getOverallDashboardStatsWithFilter",
+  dateFilterController.getOverallDashboardStatsWithFilter
+);
+router.get(
+  "/getAllOrdersWithCustomerAndOperatorDetailsWithFilter",
+  dateFilterController.getAllOrdersWithCustomerAndOperatorDetailsWithFilter
+);
+router.get(
+  "/getAllOrdersWithFilter",
+  dateFilterController.getAllOrdersWithFilter
+);
+router.get(
+  "/getAllOperatorsWithCustomerDetailWithFilter",
+  dateFilterController.getAllOperatorsWithCustomerDetailWithFilter
+);
+router.get(
+  "/getAllOperatorsWithFilter",
+  dateFilterController.getAllOperatorsWithFilter
+);
+router.get(
+  "/getAllCustomersWithOperatorsDetailsWithFilter",
+  dateFilterController.getAllCustomersWithOperatorsDetailsWithFilter
+);
+router.get(
+  "/getAllCustomersWithFilter",
+  dateFilterController.getAllCustomersWithFilter
+);
 
-router.get("/getAllOrderedStatusOrdersByOrdersTimeWithFilter", dateFilterController.getAllOrderedStatusOrdersByOrdersTimeWithFilter);
-router.get("/getAllShippedStatusOrdersByOrdersTimeWithFilter", dateFilterController.getAllShippedStatusOrdersByOrdersTimeWithFilter);
-router.get("/getAllDeliveredStatusOrdersByOrdersTimeWithFilter", dateFilterController.getAllDeliveredStatusOrdersByOrdersTimeWithFilter);
+router.get(
+  "/getAllOrderedStatusOrdersByOrdersTimeWithFilter",
+  dateFilterController.getAllOrderedStatusOrdersByOrdersTimeWithFilter
+);
+router.get(
+  "/getAllShippedStatusOrdersByOrdersTimeWithFilter",
+  dateFilterController.getAllShippedStatusOrdersByOrdersTimeWithFilter
+);
+router.get(
+  "/getAllDeliveredStatusOrdersByOrdersTimeWithFilter",
+  dateFilterController.getAllDeliveredStatusOrdersByOrdersTimeWithFilter
+);
 
-
-router.get("/getAllOrderedStatusOrdersWithFilter", dateFilterController.getAllOrderedStatusOrdersWithFilter);
-router.get("/getAllShippedStatusOrdersWithFilter", dateFilterController.getAllShippedStatusOrdersWithFilter);
-router.get("/getAllDeliveredStatusOrdersWithFilter", dateFilterController.getAllDeliveredStatusOrdersWithFilter);
+router.get(
+  "/getAllOrderedStatusOrdersWithFilter",
+  dateFilterController.getAllOrderedStatusOrdersWithFilter
+);
+router.get(
+  "/getAllShippedStatusOrdersWithFilter",
+  dateFilterController.getAllShippedStatusOrdersWithFilter
+);
+router.get(
+  "/getAllDeliveredStatusOrdersWithFilter",
+  dateFilterController.getAllDeliveredStatusOrdersWithFilter
+);
 
 // customer ===========>
 
@@ -236,7 +303,6 @@ router.get(
   dateFilterController.getShippedStatusOrdersForCustomerOrdersTimeWithFilter
 );
 
-
 router.get(
   "/getDeliveredStatusOrdersForCustomerOrdersTimeWithFilter/customer/:customer_id",
   dateFilterController.getDeliveredStatusOrdersForCustomerOrdersTimeWithFilter
@@ -249,27 +315,25 @@ router.get(
   dateFilterController.getDashboardStatsForOperatorWithFilter
 );
 
-
 router.get(
   "/getAllOrdersByOperatorWithFilter/operator/:operator_id",
   dateFilterController.getAllOrdersByOperatorWithFilter
 );
 
-// issue is their if admin update the operator to that customer after some 
-//  month , if we filter and  giving brfore update time that customer is 
+// issue is their if admin update the operator to that customer after some
+//  month , if we filter and  giving brfore update time that customer is
 //  not showing for operator because we directly update
 
 // ----
-// to solve this when update we have to insret new row and when map the 
-// operaor to customer we have to consider last row for map customer 
+// to solve this when update we have to insret new row and when map the
+// operaor to customer we have to consider last row for map customer
 
 // -------------------- NOT SOLVED (25-10-24) -------------------
- 
+
 router.get(
   "/getCustomersForOperatorWithFilter/operator/:operator_id",
   dateFilterController.getCustomersForOperatorWithFilter
 );
-
 
 router.get(
   "/getOrderedStatusOrdersForOperatorOrdersTimeWithFilter/operator/:operator_id",
@@ -286,11 +350,30 @@ router.get(
   dateFilterController.getDeliveredStatusOrdersForOperatorOrdersTimeWithFilter
 );
 
-
 // Routes for OTP
 router.post("/sendOTP", otpController.sendOTP);
 router.post("/verifyOTP", otpController.verifyOTP);
 
+// test
+
+router.get(
+  "/getCustomersWithNewFilter",
+  customerController.getCustomersWithNewFilter
+);
+
+router.get(
+  "/getCustomersWithOldFilter",
+  customerController.getCustomersWithOldFilter
+);
+
+// Addresses router
+
+router.post("/createAddress", AddressesController.createAddress);
+router.get("/getAllAddresses", AddressesController.getAllAddresses);
+router.get("/getAddressById/:address_id", AddressesController.getAddressById);
+router.put("/updateAddress/:address_id", AddressesController.updateAddress);
+router.delete("/deleteAddress/:address_id", AddressesController.deleteAddress);
+router.get("/getAllAddressesDropdown", AddressesController.getAllAddressesDropdown);
 
 
 module.exports = router;

@@ -18,7 +18,7 @@ const transporter = nodemailer.createTransport({
 
 // Generate a random 6-digit OTP
 function generateOTP() {
-  return Math.floor(1000 + Math.random() * 9000).toString();
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 // Send OTP via email and store it in the database

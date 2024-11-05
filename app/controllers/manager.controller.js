@@ -1,31 +1,87 @@
 const db = require("../models");
 const Manager = db.managers;
 const { Op } = require("sequelize"); // Import Op from sequelize
-
+const OTP = db.otp;
 const RESPONSE = require("../constants/response");
 const { MESSAGE } = require("../constants/message");
 const { StatusCode } = require("../constants/HttpStatusCode");
+
+exports.checkManagerExistForRegister = async (req, res) => {
+  try {
+    const { email, phone } = req.body;
+    // Check if the email already exists
+    const emailExists = await Manager.findOne({
+      where: { email, delete_status: 0 },
+    });
+    if (emailExists) {
+      RESPONSE.Success.Message = "Email already exists.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
+    // Check if the phone number already exists
+    const phoneExists = await Manager.findOne({
+      where: { phone, delete_status: 0 },
+    });
+    if (phoneExists) {
+      RESPONSE.Success.Message = "Phone number already exists.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+    RESPONSE.Success.Message = "Success";
+    RESPONSE.Success.data = [];
+    res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("checkManagerExistForRegister:", error);
+    RESPONSE.Failure.Message =
+      error.message || "Error checkManagerExistForRegister";
+    res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+
+
 
 // Registration
 exports.registerManager = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
 
-    // Check if email or phone number already exists
-    const existingManager = await Manager.findOne({
-      where: {
-        [Op.or]: [{ email }, { phone }],
-      },
-    });
+    // // Check if email or phone number already exists
+    // const existingManager = await Manager.findOne({
+    //   where: {
+    //     [Op.or]: [{ email }, { phone }],
+    //   },
+    // });
 
-    if (existingManager) {
-      RESPONSE.Success.Message = "Email or phone number already exists.";
+    // if (existingManager) {
+    //   RESPONSE.Success.Message = "Email or phone number already exists.";
+    //   RESPONSE.Success.data = {};
+    //   return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    //   // return res
+    //   //   .status(400)
+    //   //   .json({ message: "Email or phone number already exists." });
+    // }
+
+    const emailExists = await Manager.findOne({
+      where: { email, delete_status: 0 },
+    });
+    if (emailExists) {
+      RESPONSE.Success.Message = "Email already exists.";
       RESPONSE.Success.data = {};
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
-      // return res
-      //   .status(400)
-      //   .json({ message: "Email or phone number already exists." });
     }
+
+    // Check if the phone number already exists
+    const phoneExists = await Manager.findOne({
+      where: { phone, delete_status: 0 },
+    });
+    if (phoneExists) {
+      RESPONSE.Success.Message = "Phone number already exists.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
 
     const manager = await Manager.create({ name, email, phone, password });
     RESPONSE.Success.Message = "Manager registered successfully";
@@ -97,5 +153,152 @@ exports.getManagerById = async (req, res) => {
     RESPONSE.Failure.Message = error.message || "Error fetching manager.";
     res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
     // res.status(500).json({ message: "Error fetching manager." });
+  }
+};
+
+// Soft delete manager by setting delete_status to 1 and updating deletedAt
+exports.deleteManager = async (req, res) => {
+  try {
+    const managerId = req.params.manager_id; // Get manager_id from request parameters
+
+    // Find the manager by ID
+    const manager = await Manager.findOne({ where: { manager_id: managerId } });
+
+    if (!manager) {
+      RESPONSE.Failure.Message = "Manager not found.";
+      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+    }
+
+    // Check if the manager is already soft deleted
+    if (manager.delete_status === 1) {
+      RESPONSE.Failure.Message = "Manager is already deleted.";
+      return res.status(StatusCode.OK.code).send(RESPONSE.Failure);
+    }
+
+    // Perform soft delete by updating the delete_status and deletedAt fields
+    await Manager.update(
+      {
+        delete_status: 1,
+        deletedAt: new Date(), // Set current timestamp as the deleted time
+      },
+      { where: { manager_id: managerId } }
+    );
+
+    RESPONSE.Success.Message = "Manager soft deleted successfully.";
+    RESPONSE.Success.data = {};
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("Error in deleting manager:", error);
+    RESPONSE.Failure.Message = error.message || "Failed to delete manager.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+
+// Edit manager information after verifying OTP
+exports.editManagerInfo = async (req, res) => {
+  try {
+    const managerId = req.params.manager_id; // Get manager_id from request parameters
+    const {
+      email,
+      otp,
+      newName,
+      newPhone,
+      newEmail,
+      newPassword,
+      newProfileImage,
+    } = req.body;
+
+    // Check if the new email already exists
+    if (newEmail && newEmail !== email) {
+      const emailExists = await Manager.findOne({
+        where: {
+          email: newEmail,
+          manager_id: { [Op.ne]: managerId }, // Exclude current manager by ID
+          delete_status: 0
+        },
+      });
+
+      if (emailExists) {
+        RESPONSE.Success.Message = "The new email is already in use by another manager.";
+        RESPONSE.Success.data = {};
+        return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      }
+    }
+
+    // Check if the new phone number already exists
+    if (newPhone) {
+      const phoneExists = await Manager.findOne({
+        where: {
+          phone: newPhone,
+          manager_id: { [Op.ne]: managerId }, // Exclude current manager by ID
+          delete_status: 0
+        },
+      });
+
+      if (phoneExists) {
+        RESPONSE.Success.Message = "The new phone number is already in use by another manager.";
+        RESPONSE.Success.data = {};
+        return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      }
+    }
+
+    // Verify OTP
+    const otpData = await OTP.findOne({ where: { email, otp } });
+
+    if (!otpData) {
+      RESPONSE.Success.Message = MESSAGE.INVALID_OTP;
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
+    // Check if the OTP is expired
+    if (otpData.expiresAt < Date.now()) {
+      await OTP.destroy({ where: { email, otp } }); // Remove expired OTP
+      RESPONSE.Success.Message = MESSAGE.OTP_EXPIRED;
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    }
+
+    // Find the manager by ID
+    const manager = await Manager.findOne({
+      where: { manager_id: managerId },
+    });
+
+    if (!manager) {
+      RESPONSE.Failure.Message = "Manager not found.";
+      return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+    }
+
+    // Prepare the fields to update
+    const updatedFields = {
+      name: newName || manager.name,
+      phone: newPhone || manager.phone,
+      email: newEmail || manager.email,
+      password: newPassword || manager.password,
+      profileImage: newProfileImage || manager.profileImage,
+    };
+
+    // Update manager using Manager.update()
+    await Manager.update(updatedFields, {
+      where: { manager_id: managerId },
+    });
+
+    // Fetch the updated manager details
+    const updatedManager = await Manager.findOne({
+      where: { manager_id: managerId },
+      attributes: { exclude: ["password"] },
+    });
+
+    // Delete OTP after successful verification
+    await OTP.destroy({ where: { email, otp } });
+
+    RESPONSE.Success.Message = "Manager information updated successfully.";
+    RESPONSE.Success.data = updatedManager;
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("Error updating manager information:", error);
+    RESPONSE.Failure.Message = error.message || "Failed to update manager information.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };

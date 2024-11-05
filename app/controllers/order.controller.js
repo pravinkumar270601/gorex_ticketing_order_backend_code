@@ -477,6 +477,13 @@ exports.deleteOrder = async (req, res) => {
 
     // Update the delete_status field to 1 to mark as deleted
     await Order.update({ delete_status: 1 }, { where: { order_id } });
+
+    // Soft delete related OrderStatusHistory entries
+    await OrderStatusHistory.update(
+      { delete_status: 1 },
+      { where: { order_id } }
+    );
+
     RESPONSE.Success.Message = "Order deleted successfully.";
     RESPONSE.Success.data = {};
     return res.status(StatusCode.OK.code).send(RESPONSE.Success);
@@ -514,8 +521,10 @@ exports.getAllOrdersForOperator = async (req, res) => {
       RESPONSE.Success.Message = "No orders found for the specified operator.";
       RESPONSE.Success.data = [];
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+
       // RESPONSE.Failure.Message = "No orders found for the specified operator.";
       // return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+
       // return res.status(404).json({
       //   Status: false,
       //   Success: false,
@@ -559,9 +568,8 @@ exports.getAllOrdersByCustomer = async (req, res) => {
 
     // Check if any orders were found
     if (orders.length === 0) {
-
       RESPONSE.Success.Message = "No orders found for this customer.";
-      RESPONSE.Success.data = [];
+      RESPONSE.Success.data = {};
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
       // RESPONSE.Failure.Message = "No orders found for this customer.";
       // return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
@@ -701,7 +709,7 @@ exports.updateOrderStatusWithTime = async (req, res) => {
 
     // Find the associated order_id and current order_status from OrderStatusHistory
     const orderStatusHistory = await OrderStatusHistory.findOne({
-      where: { orderStatusHistory_id },
+      where: { orderStatusHistory_id,delete_status: 0 },
     });
 
     if (!orderStatusHistory) {
@@ -727,7 +735,7 @@ exports.updateOrderStatusWithTime = async (req, res) => {
       },
       {
         where: {
-          orderStatusHistory_id,
+          orderStatusHistory_id,delete_status: 0
         },
       }
     );
@@ -752,6 +760,7 @@ exports.updateOrderStatusWithTime = async (req, res) => {
             [db.Sequelize.Op.ne]: orderStatusHistory_id,
           }, // Exclude the current record
           order_status: { [db.Sequelize.Op.ne]: currentStatus }, // Exclude the current status dynamically
+          delete_status: 0,
         },
       }
     );
@@ -784,7 +793,7 @@ exports.getDashboardStatsForCustomer = async (req, res) => {
   try {
     // Check if the customer exists
     const customerExists = await Customer.findOne({
-      where: { customer_id },
+      where: { customer_id, delete_status: 0 },
     });
 
     if (!customerExists) {
@@ -823,7 +832,7 @@ exports.getDashboardStatsForCustomer = async (req, res) => {
           attributes: [],
         },
       ],
-      where: { active_status: true },
+      where: { active_status: true ,delete_status: 0,},
       attributes: [
         "order_status",
         [
@@ -888,7 +897,7 @@ exports.getDashboardStatsForOperator = async (req, res) => {
   try {
     // Check if the operator exists
     const operatorExists = await Operator.findOne({
-      where: { operator_id },
+      where: { operator_id, delete_status: 0 },
     });
 
     if (!operatorExists) {
@@ -934,7 +943,7 @@ exports.getDashboardStatsForOperator = async (req, res) => {
           attributes: [],
         },
       ],
-      where: { active_status: true },
+      where: { active_status: true,delete_status: 0, },
       attributes: [
         "order_status",
         [
@@ -1250,4 +1259,3 @@ exports.getAllDeliveredStatusOrders = async (req, res) => {
     res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };
-
