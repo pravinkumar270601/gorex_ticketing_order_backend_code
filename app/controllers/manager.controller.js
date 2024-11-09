@@ -6,6 +6,79 @@ const RESPONSE = require("../constants/response");
 const { MESSAGE } = require("../constants/message");
 const { StatusCode } = require("../constants/HttpStatusCode");
 
+exports.createDefaultManagers = async () => {
+  try {
+    // Step 1: Define multiple hardcoded Managers
+    const hardcodedManagers = [
+      {
+        name: "Backup Manager",
+        email: "backupmanager@gorex.in",
+        phone: "4567890123",
+        password: "1234",
+      },
+      // {
+      //   name: "Primary Manager",
+      //   email: "primarymanager@gorex.in",
+      //   phone: "1234567890",
+      //   password: "1234", // Default password
+      // },
+      // {
+      //   name: "Secondary Manager",
+      //   email: "secondarymanager@gorex.in",
+      //   phone: "2345678901",
+      //   password: "1234", // Default password
+      // },
+    ];
+
+    // Step 2: Iterate through each hardcoded Manager and create if not exists
+    for (const managerData of hardcodedManagers) {
+      const emailExists = await Manager.findOne({
+        where: { email: managerData.email, delete_status: 0 },
+      });
+
+      if (!emailExists) {
+        // Create Manager if no conflict
+        await Manager.create(managerData);
+        // console.log(`Hardcoded Manager created: ${managerData.email}`);
+      } else {
+        // console.log(`Manager with email ${managerData.email} already exists.`);
+      }
+    }
+
+    // Step 3: Parse Managers from the .env file if provided
+    const defaultManagers = JSON.parse(process.env.MANAGERS || "[]"); // Ensure default is empty if undefined
+
+    // Step 4: Iterate over Managers from the .env file and create them
+    for (const managerData of defaultManagers) {
+      // Check if email already exists
+      const emailExists = await Manager.findOne({
+        where: { email: managerData.email, delete_status: 0 },
+      });
+      if (emailExists) {
+        // console.log(`Manager with email ${managerData.email} already exists.`);
+        continue; // Skip to the next Manager
+      }
+
+      // Check if phone number already exists
+      const phoneExists = await Manager.findOne({
+        where: { phone: managerData.phone, delete_status: 0 },
+      });
+      if (phoneExists) {
+        // console.log(
+        //   `Manager with phone number ${managerData.phone} already exists.`
+        // );
+        continue; // Skip to the next Manager
+      }
+
+      // Create the Manager if no email or phone conflict
+      await Manager.create(managerData);
+      // console.log(`Manager created from .env: ${managerData.email}`);
+    }
+  } catch (error) {
+    // console.error("Error creating default Managers:", error);
+  }
+};
+
 exports.checkManagerExistForRegister = async (req, res) => {
   try {
     const { email, phone } = req.body;
@@ -38,9 +111,6 @@ exports.checkManagerExistForRegister = async (req, res) => {
     res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };
-
-
-
 
 // Registration
 exports.registerManager = async (req, res) => {
@@ -82,7 +152,6 @@ exports.registerManager = async (req, res) => {
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
     }
 
-
     const manager = await Manager.create({ name, email, phone, password });
     RESPONSE.Success.Message = "Manager registered successfully";
     RESPONSE.Success.data = manager;
@@ -104,13 +173,20 @@ exports.registerManager = async (req, res) => {
 exports.loginManager = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const manager = await Manager.findOne({ where: { email, password } });
+    const manager = await Manager.findOne({ where: { email, delete_status: 0 } });
     if (!manager) {
       RESPONSE.Success.Message = "Manager not found!";
       RESPONSE.Success.data = {};
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
       // return res.status(401).json({ message: "Invalid credentials" });
     }
+    if (manager.password !== password) {
+      RESPONSE.Success.Message = "Invalid password.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      // return res.status(401).json({ message: "Invalid password." });
+    }
+
     RESPONSE.Success.Message = "Manager logged in successfully";
     RESPONSE.Success.data = manager;
     res.status(StatusCode.CREATED.code).send(RESPONSE.Success);
@@ -134,7 +210,7 @@ exports.getManagerById = async (req, res) => {
   try {
     const manager = await Manager.findOne({
       where: { manager_id: managerId },
-      attributes: { exclude: ["password"] }, // Exclude the password field from the response
+      // attributes: { exclude: ["password"] }, // Exclude the password field from the response
     });
 
     if (!manager) {
@@ -194,7 +270,6 @@ exports.deleteManager = async (req, res) => {
   }
 };
 
-
 // Edit manager information after verifying OTP
 exports.editManagerInfo = async (req, res) => {
   try {
@@ -215,12 +290,13 @@ exports.editManagerInfo = async (req, res) => {
         where: {
           email: newEmail,
           manager_id: { [Op.ne]: managerId }, // Exclude current manager by ID
-          delete_status: 0
+          delete_status: 0,
         },
       });
 
       if (emailExists) {
-        RESPONSE.Success.Message = "The new email is already in use by another manager.";
+        RESPONSE.Success.Message =
+          "The new email is already in use by another manager.";
         RESPONSE.Success.data = {};
         return res.status(StatusCode.OK.code).send(RESPONSE.Success);
       }
@@ -232,12 +308,13 @@ exports.editManagerInfo = async (req, res) => {
         where: {
           phone: newPhone,
           manager_id: { [Op.ne]: managerId }, // Exclude current manager by ID
-          delete_status: 0
+          delete_status: 0,
         },
       });
 
       if (phoneExists) {
-        RESPONSE.Success.Message = "The new phone number is already in use by another manager.";
+        RESPONSE.Success.Message =
+          "The new phone number is already in use by another manager.";
         RESPONSE.Success.data = {};
         return res.status(StatusCode.OK.code).send(RESPONSE.Success);
       }
@@ -298,7 +375,99 @@ exports.editManagerInfo = async (req, res) => {
     return res.status(StatusCode.OK.code).send(RESPONSE.Success);
   } catch (error) {
     console.error("Error updating manager information:", error);
-    RESPONSE.Failure.Message = error.message || "Failed to update manager information.";
+    RESPONSE.Failure.Message =
+      error.message || "Failed to update manager information.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+exports.checkEmailPhoneAvailabilityForManager = async (req, res) => {
+  try {
+    const managerId = req.params.manager_id; // Get manager_id from request parameters
+    const { email, phone } = req.body; // Get email and phone from the request body
+
+    // Validation: Check if either email or phone is provided
+    if (!email && !phone) {
+      RESPONSE.Failure.Message = "Email or phone number is required.";
+      return res.status(StatusCode.BAD_REQUEST.code).send(RESPONSE.Failure);
+    }
+
+    // Check if the new email already exists for another manager
+    if (email) {
+      const emailExists = await Manager.findOne({
+        where: {
+          email,
+          delete_status: 0,
+          manager_id: { [Op.ne]: managerId }, // Exclude current manager by ID
+        },
+      });
+
+      if (emailExists) {
+        RESPONSE.Success.Message = "The email is already in use by another manager.";
+        RESPONSE.Success.data = {};
+        return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      }
+    }
+
+    // Check if the new phone number already exists for another manager
+    if (phone) {
+      const phoneExists = await Manager.findOne({
+        where: {
+          phone,
+          delete_status: 0,
+          manager_id: { [Op.ne]: managerId }, // Exclude current manager by ID
+        },
+      });
+
+      if (phoneExists) {
+        RESPONSE.Success.Message = "The phone number is already in use by another manager.";
+        RESPONSE.Success.data = {};
+        return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      }
+    }
+
+    // If no conflicts are found, return success response
+    RESPONSE.Success.Message = "Email and phone are available.";
+    RESPONSE.Success.data = {};
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+
+  } catch (error) {
+    console.error("Error checking email and phone availability:", error);
+    RESPONSE.Failure.Message = error.message || "Failed to check email and phone availability.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+
+exports.resetPasswordForManager = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // Check if the manager with the specified email and delete_status of 0 exists
+    const manager = await Manager.findOne({
+      where: {
+        email,
+        delete_status: 0, // Ensure the manager is active
+      },
+    });
+
+    if (!manager) {
+      RESPONSE.Success.Message = "Manager not found! Please sign up.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      // RESPONSE.Failure.Message = "Manager not found! Please sign up.";
+      // return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+    }
+
+    // Update the password
+    await Manager.update({ password: newPassword }, { where: { email } });
+
+    RESPONSE.Success.Message = "Password has been reset successfully.";
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("Error resetting manager password:", error);
+    RESPONSE.Failure.Message =
+      error.message || "Failed to reset password.";
     return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };

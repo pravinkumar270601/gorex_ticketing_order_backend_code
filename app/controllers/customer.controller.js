@@ -12,8 +12,9 @@ exports.checkCustomerExistForRegister = async (req, res) => {
   try {
     const { email, phone } = req.body;
     // Check if the email already exists
-    const emailExists = await Customer.findOne({ where: { email, 
-      delete_status: 0  } });
+    const emailExists = await Customer.findOne({
+      where: { email, delete_status: 0 },
+    });
     if (emailExists) {
       RESPONSE.Success.Message = "Email already exists.";
       RESPONSE.Success.data = {};
@@ -21,8 +22,9 @@ exports.checkCustomerExistForRegister = async (req, res) => {
     }
 
     // Check if the phone number already exists
-    const phoneExists = await Customer.findOne({ where: { phone, 
-      delete_status: 0  } });
+    const phoneExists = await Customer.findOne({
+      where: { phone, delete_status: 0 },
+    });
     if (phoneExists) {
       RESPONSE.Success.Message = "Phone number already exists.";
       RESPONSE.Success.data = {};
@@ -42,7 +44,7 @@ exports.checkCustomerExistForRegister = async (req, res) => {
 // Registration
 exports.registerCustomer = async (req, res) => {
   try {
-    const { name, email, phone, password,profileImage } = req.body;
+    const { name, email, phone, password, profileImage } = req.body;
 
     // // Check if email or phone number already exists
     // const existingCustomer = await Customer.findOne({
@@ -60,8 +62,9 @@ exports.registerCustomer = async (req, res) => {
     //   //   .json({ message: "Email or phone number already exists." });
     // }
 
-    const emailExists = await Customer.findOne({ where: { email, 
-      delete_status: 0  } });
+    const emailExists = await Customer.findOne({
+      where: { email, delete_status: 0 },
+    });
     if (emailExists) {
       RESPONSE.Success.Message = "Email already exists.";
       RESPONSE.Success.data = {};
@@ -69,15 +72,22 @@ exports.registerCustomer = async (req, res) => {
     }
 
     // Check if the phone number already exists
-    const phoneExists = await Customer.findOne({ where: { phone, 
-      delete_status: 0  } });
+    const phoneExists = await Customer.findOne({
+      where: { phone, delete_status: 0 },
+    });
     if (phoneExists) {
       RESPONSE.Success.Message = "Phone number already exists.";
       RESPONSE.Success.data = {};
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
     }
 
-    const customer = await Customer.create({ name, email, phone, password,profileImage });
+    const customer = await Customer.create({
+      name,
+      email,
+      phone,
+      password,
+      profileImage,
+    });
     RESPONSE.Success.Message = "Customer registered successfully";
     RESPONSE.Success.data = customer;
     res.status(StatusCode.CREATED.code).send(RESPONSE.Success);
@@ -170,8 +180,9 @@ exports.registerCustomer = async (req, res) => {
 exports.loginCustomer = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const customer = await Customer.findOne({ where: { email,
-      delete_status: 0 } });
+    const customer = await Customer.findOne({
+      where: { email, delete_status: 0 },
+    });
     if (!customer) {
       RESPONSE.Success.Message = "Customer not found!";
       RESPONSE.Success.data = {};
@@ -179,7 +190,7 @@ exports.loginCustomer = async (req, res) => {
       // return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    if (Customer.password !== password) {
+    if (customer.password !== password) {
       RESPONSE.Success.Message = "Invalid password.";
       RESPONSE.Success.data = {};
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
@@ -209,7 +220,7 @@ exports.getCustomerById = async (req, res) => {
   try {
     const customer = await Customer.findOne({
       where: { customer_id: customerId },
-      attributes: { exclude: ["password"] }, // Exclude the password field from the response
+      // attributes: { exclude: ["password"] }, // Exclude the password field from the response
     });
 
     if (!customer) {
@@ -432,6 +443,123 @@ exports.editCustomerInfo = async (req, res) => {
   }
 };
 
+exports.checkEmailPhoneAvailabilityForCustomer = async (req, res) => {
+  try {
+    const customerId = req.params.customer_id; // Get customer_id from request parameters
+    const { email, phone } = req.body;
+
+    // Validation: Check if either email or phone is provided
+    if (!email && !phone) {
+
+      RESPONSE.Failure.Message = "email or phone number is required.";
+      return res.status(StatusCode.BAD_REQUEST.code).send(RESPONSE.Failure);
+
+      // return res.status(400).json({
+      //   success: false,
+      //   message: "Either email or phone number is required.",
+      // });
+    }
+
+    // Check if the new email already exists for another customer
+    if (email) {
+      const emailExists = await Customer.findOne({
+        where: {
+          email,
+          delete_status: 0,
+          customer_id: { [Op.ne]: customerId }, // Exclude current customer by ID
+        },
+      });
+
+      if (emailExists) {
+
+        RESPONSE.Success.Message = "The email is already in use by another customer.";
+        RESPONSE.Success.data = {};
+        return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+        // return res.status(200).json({
+        //   success: false,
+        //   message: "The email is already in use by another customer.",
+        // });
+      }
+    }
+
+    // Check if the new phone number already exists for another customer
+    if (phone) {
+      const phoneExists = await Customer.findOne({
+        where: {
+          phone,
+          delete_status: 0,
+          customer_id: { [Op.ne]: customerId }, // Exclude current customer by ID
+        },
+      });
+
+      if (phoneExists) {
+        RESPONSE.Success.Message = "The phone number is already in use by another customer.";
+        RESPONSE.Success.data = {};
+        return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+        // return res.status(200).json({
+        //   success: false,
+        //   message: "The phone number is already in use by another customer.",
+        // });
+      }
+    }
+
+    // If no conflicts are found, return success response
+
+    RESPONSE.Success.Message = "Email and phone are available.";
+    RESPONSE.Success.data = {};
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+    // return res.status(200).json({
+    //   success: true,
+    //   message: "Email and phone are available.",
+    // });
+  } catch (error) {
+    console.error("Error checking email and phone availability:", error);
+
+    RESPONSE.Failure.Message =
+    error.message || "Failed to check email and phone availability.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+    // return res.status(500).json({
+    //   success: false,
+    //   message: "Failed to check email and phone availability.",
+    //   error: error.message,
+    // });
+  }
+};
+
+
+// Reset Password API Handler (without OTP)
+exports.resetPasswordForCustomer = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // Check if the customer with the specified email and delete_status of 0 exists
+    const customer = await Customer.findOne({
+      where: {
+        email,
+        delete_status: 0, // Ensure the customer is active
+      },
+    });
+
+    if (!customer) {
+      RESPONSE.Success.Message = "Customer not found! Please sign up.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      // RESPONSE.Failure.Message = "Customer not found! Please sign up.";
+      // return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+    }
+
+    // Update the password
+    await Customer.update({ password: newPassword }, { where: { email } });
+
+    RESPONSE.Success.Message = "Password has been reset successfully.";
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    RESPONSE.Failure.Message = error.message || "Failed to reset password.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
 // Soft delete customer by setting delete_status to 1 and updating deletedAt
 exports.deleteCustomer = async (req, res) => {
   try {
@@ -481,6 +609,7 @@ exports.getAllCustomersWithOperatorsDetails = async (req, res) => {
           model: Operator,
           through: {
             model: CustomerOperator,
+            where: { delete_status: 0 }, // Only include records with delete_status = 0
             attributes: [], // Don't include extra fields from the junction table
           },
         },
@@ -513,6 +642,7 @@ exports.getCustomersWithoutOperators = async (req, res) => {
           model: Operator,
           through: {
             model: CustomerOperator,
+            where: { delete_status: 0 },
             attributes: [], // Don't include extra fields from the junction table
           },
           required: false, // Include customers even if they don't have associated operators
@@ -566,7 +696,6 @@ exports.getAllCustomers = async (req, res) => {
 // ===============================================================
 // ===============================================================
 // ===============================================================
-
 
 exports.getCustomersWithNewFilter = async (req, res) => {
   // const { customer_id } = req.params; // Ensure operator_id is used only if it’s a field in Customer

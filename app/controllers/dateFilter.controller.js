@@ -60,6 +60,7 @@ exports.getOverallDashboardStatsWithFilter = async (req, res) => {
     const statusCounts = await OrderStatusHistory.findAll({
       where: {
         active_status: true,
+        delete_status: 0,
       },
       include: [
         {
@@ -88,7 +89,17 @@ exports.getOverallDashboardStatsWithFilter = async (req, res) => {
     const operatorStats = await Operator.findAll({
       where: {
         ...(startDate && endDate
-          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          ? {
+              [Op.and]: [
+                { createdAt: { [Op.lte]: endDate } },
+                {
+                  [Op.or]: [
+                    { deletedAt: null },
+                    { deletedAt: { [Op.gte]: startDate } },
+                  ],
+                },
+              ],
+            }
           : {}),
       },
       attributes: [
@@ -104,7 +115,17 @@ exports.getOverallDashboardStatsWithFilter = async (req, res) => {
     const customerStats = await Customer.findAll({
       where: {
         ...(startDate && endDate
-          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          ? {
+              [Op.and]: [
+                { createdAt: { [Op.lte]: endDate } },
+                {
+                  [Op.or]: [
+                    { deletedAt: null },
+                    { deletedAt: { [Op.gte]: startDate } },
+                  ],
+                },
+              ],
+            }
           : {}),
       },
       attributes: [
@@ -243,7 +264,17 @@ exports.getAllOperatorsWithCustomerDetailWithFilter = async (req, res) => {
     const operators = await Operator.findAll({
       where: {
         ...(startDate && endDate
-          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          ? {
+              [Op.and]: [
+                { createdAt: { [Op.lte]: endDate } },
+                {
+                  [Op.or]: [
+                    { deletedAt: null },
+                    { deletedAt: { [Op.gte]: startDate } },
+                  ],
+                },
+              ],
+            }
           : {}),
       },
       include: [
@@ -297,7 +328,17 @@ exports.getAllCustomersWithOperatorsDetailsWithFilter = async (req, res) => {
       // where: { delete_status: 0 }, i don't set delete_status for customer  // Fetch active customers
       where: {
         ...(startDate && endDate
-          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          ? {
+              [Op.and]: [
+                { createdAt: { [Op.lte]: endDate } },
+                {
+                  [Op.or]: [
+                    { deletedAt: null },
+                    { deletedAt: { [Op.gte]: startDate } },
+                  ],
+                },
+              ],
+            }
           : {}),
       },
       include: [
@@ -356,6 +397,18 @@ exports.getAllOrdersWithFilter = async (req, res) => {
           ? { createdAt: { [Op.between]: [startDate, endDate] } }
           : {}),
       },
+      include: [
+        {
+          model: Customer,
+          attributes: { exclude: ["password"] }, // Exclude sensitive fields like password
+          // attributes: ["name", "email"], // Only include name and email
+        },
+        {
+          model: Operator,
+          attributes: { exclude: ["password"] },
+          // attributes: ["name", "email"], // Only include name and email
+        },
+      ],
     });
 
     RESPONSE.Success.Message = "Orders retrieved successfully.";
@@ -393,7 +446,17 @@ exports.getAllOperatorsWithFilter = async (req, res) => {
     const operators = await Operator.findAll({
       where: {
         ...(startDate && endDate
-          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          ? {
+              [Op.and]: [
+                { createdAt: { [Op.lte]: endDate } },
+                {
+                  [Op.or]: [
+                    { deletedAt: null },
+                    { deletedAt: { [Op.gte]: startDate } },
+                  ],
+                },
+              ],
+            }
           : {}),
       },
     });
@@ -434,7 +497,17 @@ exports.getAllCustomersWithFilter = async (req, res) => {
     const customers = await Customer.findAll({
       where: {
         ...(startDate && endDate
-          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          ? {
+              [Op.and]: [
+                { createdAt: { [Op.lte]: endDate } },
+                {
+                  [Op.or]: [
+                    { deletedAt: null },
+                    { deletedAt: { [Op.gte]: startDate } },
+                  ],
+                },
+              ],
+            }
           : {}),
       },
     });
@@ -476,6 +549,7 @@ exports.getAllOrderedStatusOrdersByOrdersTimeWithFilter = async (req, res) => {
       where: {
         active_status: true,
         order_status: "ordered", // Use the status provided in the request
+        delete_status: 0
       },
       include: [
         {
@@ -486,8 +560,20 @@ exports.getAllOrderedStatusOrdersByOrdersTimeWithFilter = async (req, res) => {
               ? { createdAt: { [Op.between]: [startDate, endDate] } }
               : {}),
           },
+          include: [
+            {
+              model: Customer,
+              attributes: ["customer_id", "name", "email"], // Specify attributes as needed
+            },
+            {
+              model: Operator,
+              attributes: ["operator_id", "name", "email"], // Specify attributes as needed
+            },
+          ],
         },
+        
       ],
+
     });
 
     RESPONSE.Success.Message = `Orders with status ordered retrieved successfully.`;
@@ -527,6 +613,7 @@ exports.getAllShippedStatusOrdersByOrdersTimeWithFilter = async (req, res) => {
       where: {
         active_status: true,
         order_status: "shipped", // Use the status provided in the request
+        delete_status: 0
       },
       include: [
         {
@@ -537,6 +624,16 @@ exports.getAllShippedStatusOrdersByOrdersTimeWithFilter = async (req, res) => {
               ? { createdAt: { [Op.between]: [startDate, endDate] } }
               : {}),
           },
+          include: [
+            {
+              model: Customer,
+              attributes: ["customer_id", "name", "email"], // Specify attributes as needed
+            },
+            {
+              model: Operator,
+              attributes: ["operator_id", "name", "email"], // Specify attributes as needed
+            },
+          ],
         },
       ],
     });
@@ -581,6 +678,7 @@ exports.getAllDeliveredStatusOrdersByOrdersTimeWithFilter = async (
       where: {
         active_status: true,
         order_status: "delivered", // Use the status provided in the request
+        delete_status: 0
       },
       include: [
         {
@@ -591,6 +689,16 @@ exports.getAllDeliveredStatusOrdersByOrdersTimeWithFilter = async (
               ? { createdAt: { [Op.between]: [startDate, endDate] } }
               : {}),
           },
+          include: [
+            {
+              model: Customer,
+              attributes: ["customer_id", "name", "email"], // Specify attributes as needed
+            },
+            {
+              model: Operator,
+              attributes: ["operator_id", "name", "email"], // Specify attributes as needed
+            },
+          ],
         },
       ],
     });
@@ -606,7 +714,7 @@ exports.getAllDeliveredStatusOrdersByOrdersTimeWithFilter = async (
   }
 };
 
-// <><><><><><>filer based on orders status updated date ><><><><><>
+// <><><><><><>filer based on orders status updated or filter date ><><><><><>
 exports.getAllOrderedStatusOrdersWithFilter = async (req, res) => {
   const { from_date, to_date } = req.body; // Get the date range from the request body
 
@@ -833,7 +941,7 @@ exports.getDashboardStatsForCustomerWithFilter = async (req, res) => {
           attributes: [],
         },
       ],
-      where: { active_status: true },
+      where: { active_status: true,delete_status: 0 },
       attributes: [
         "order_status",
         [
@@ -1013,7 +1121,7 @@ exports.getOrderedStatusOrdersForCustomerOrdersTimeWithFilter = async (
 
     // Fetch orders with "ordered" status, filtered by date if provided
     const orderedStatus = await OrderStatusHistory.findAll({
-      where: { active_status: true, order_status: "ordered" },
+      where: { active_status: true, order_status: "ordered",delete_status: 0 },
       include: [
         {
           model: Order,
@@ -1030,7 +1138,7 @@ exports.getOrderedStatusOrdersForCustomerOrdersTimeWithFilter = async (
 
     RESPONSE.Success.Message =
       "Orders with 'ordered' status retrieved successfully.";
-    RESPONSE.Success.data = { orderedStatus };
+    RESPONSE.Success.data = orderedStatus;
     res.status(StatusCode.OK.code).send(RESPONSE.Success);
   } catch (error) {
     console.error("getOrderedStatusForCustomer:", error);
@@ -1075,7 +1183,7 @@ exports.getShippedStatusOrdersForCustomerOrdersTimeWithFilter = async (
 
     // Fetch orders with "ordered" status, filtered by date if provided
     const orderedStatus = await OrderStatusHistory.findAll({
-      where: { active_status: true, order_status: "shipped" },
+      where: { active_status: true, order_status: "shipped",delete_status: 0 },
       include: [
         {
           model: Order,
@@ -1092,7 +1200,7 @@ exports.getShippedStatusOrdersForCustomerOrdersTimeWithFilter = async (
 
     RESPONSE.Success.Message =
       "Orders with shipped status retrieved successfully.";
-    RESPONSE.Success.data = { orderedStatus };
+    RESPONSE.Success.data = orderedStatus;
     res.status(StatusCode.OK.code).send(RESPONSE.Success);
   } catch (error) {
     console.error("getshippedStatusForCustomer:", error);
@@ -1137,7 +1245,7 @@ exports.getDeliveredStatusOrdersForCustomerOrdersTimeWithFilter = async (
 
     // Fetch orders with "ordered" status, filtered by date if provided
     const orderedStatus = await OrderStatusHistory.findAll({
-      where: { active_status: true, order_status: "delivered" },
+      where: { active_status: true, order_status: "delivered",delete_status: 0 },
       include: [
         {
           model: Order,
@@ -1154,7 +1262,7 @@ exports.getDeliveredStatusOrdersForCustomerOrdersTimeWithFilter = async (
 
     RESPONSE.Success.Message =
       "Orders with delivered status retrieved successfully.";
-    RESPONSE.Success.data = { orderedStatus };
+    RESPONSE.Success.data =  orderedStatus ;
     res.status(StatusCode.OK.code).send(RESPONSE.Success);
   } catch (error) {
     console.error("getdeliveredStatusForCustomer:", error);
@@ -1220,9 +1328,19 @@ exports.getDashboardStatsForOperatorWithFilter = async (req, res) => {
     const customerStats = await CustomerOperator.findAll({
       where: {
         operator_id,
-        delete_status: 0,
+        // delete_status: 0,
         ...(startDate && endDate
-          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          ? {
+              [Op.and]: [
+                { createdAt: { [Op.lte]: endDate } },
+                {
+                  [Op.or]: [
+                    { deletedAt: null },
+                    { deletedAt: { [Op.gte]: startDate } },
+                  ],
+                },
+              ],
+            }
           : {}),
       },
       attributes: [
@@ -1249,7 +1367,7 @@ exports.getDashboardStatsForOperatorWithFilter = async (req, res) => {
           attributes: [],
         },
       ],
-      where: { active_status: true },
+      where: { active_status: true,delete_status: 0 },
       attributes: [
         "order_status",
         [
@@ -1364,9 +1482,19 @@ exports.getCustomersForOperatorWithFilter = async (req, res) => {
     const customers = await CustomerOperator.findAll({
       where: {
         operator_id,
-        delete_status: 0,
+        // delete_status: 0,
         ...(startDate && endDate
-          ? { createdAt: { [Op.between]: [startDate, endDate] } }
+          ? {
+              [Op.and]: [
+                { createdAt: { [Op.lte]: endDate } },
+                {
+                  [Op.or]: [
+                    { deletedAt: null },
+                    { deletedAt: { [Op.gte]: startDate } },
+                  ],
+                },
+              ],
+            }
           : {}),
       },
       include: [
@@ -1387,7 +1515,6 @@ exports.getCustomersForOperatorWithFilter = async (req, res) => {
     res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };
-
 
 exports.getOrderedStatusOrdersForOperatorOrdersTimeWithFilter = async (
   req,
@@ -1424,7 +1551,7 @@ exports.getOrderedStatusOrdersForOperatorOrdersTimeWithFilter = async (
 
     // Fetch orders with "ordered" status, filtered by date if provided
     const orderedStatus = await OrderStatusHistory.findAll({
-      where: { active_status: true, order_status: "ordered" },
+      where: { active_status: true, order_status: "ordered",delete_status: 0 },
       include: [
         {
           model: Order,
@@ -1486,7 +1613,7 @@ exports.getShippedStatusOrdersForOperatorOrdersTimeWithFilter = async (
 
     // Fetch orders with "ordered" status, filtered by date if provided
     const orderedStatus = await OrderStatusHistory.findAll({
-      where: { active_status: true, order_status: "shipped" },
+      where: { active_status: true, order_status: "shipped",delete_status: 0 },
       include: [
         {
           model: Order,
@@ -1548,7 +1675,7 @@ exports.getDeliveredStatusOrdersForOperatorOrdersTimeWithFilter = async (
 
     // Fetch orders with "ordered" status, filtered by date if provided
     const orderedStatus = await OrderStatusHistory.findAll({
-      where: { active_status: true, order_status: "delivered" },
+      where: { active_status: true, order_status: "delivered",delete_status: 0 },
       include: [
         {
           model: Order,

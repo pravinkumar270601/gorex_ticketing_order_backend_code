@@ -569,7 +569,7 @@ exports.getAllOrdersByCustomer = async (req, res) => {
     // Check if any orders were found
     if (orders.length === 0) {
       RESPONSE.Success.Message = "No orders found for this customer.";
-      RESPONSE.Success.data = {};
+      RESPONSE.Success.data = [];
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
       // RESPONSE.Failure.Message = "No orders found for this customer.";
       // return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
@@ -1218,6 +1218,34 @@ exports.getAllOrderedStatusOrders = async (req, res) => {
   }
 };
 
+exports.getAllOrderedStatusOrdersWithCustomerAndOperatorDetails = async (req, res) => {
+  try {
+    // Fetch all orders with "ordered" status, including customer and operator details
+    const orders = await Order.findAll({
+      where: { order_status: "ordered", delete_status: 0 }, // Only "ordered" and active orders
+      include: [
+        {
+          model: Customer,
+          attributes: { exclude: ["password"] }, // Exclude sensitive fields like password
+        },
+        {
+          model: Operator,
+          attributes: { exclude: ["password"] }, // Exclude sensitive fields like password
+        },
+      ],
+    });
+
+    RESPONSE.Success.Message = "Ordered status orders with customer and operator details retrieved successfully.";
+    RESPONSE.Success.data = orders;
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("Error retrieving ordered status orders with details:", error);
+    RESPONSE.Failure.Message = error.message || "Error retrieving ordered status orders.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+
 // API to get all "shipped" status orders
 exports.getAllShippedStatusOrders = async (req, res) => {
   try {
@@ -1239,6 +1267,33 @@ exports.getAllShippedStatusOrders = async (req, res) => {
   }
 };
 
+exports.getAllShippedStatusOrdersWithCustomerAndOperatorDetails = async (req, res) => {
+  try {
+    // Fetch all orders with "shipped" status, including customer and operator details
+    const orders = await Order.findAll({
+      where: { order_status: "shipped", delete_status: 0 }, // Only "shipped" and active orders
+      include: [
+        {
+          model: Customer,
+          attributes: { exclude: ["password"] }, // Exclude sensitive fields like password
+        },
+        {
+          model: Operator,
+          attributes: { exclude: ["password"] }, // Exclude sensitive fields like password
+        },
+      ],
+    });
+
+    RESPONSE.Success.Message = "Shipped status orders with customer and operator details retrieved successfully.";
+    RESPONSE.Success.data = orders;
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("Error retrieving shipped status orders with details:", error);
+    RESPONSE.Failure.Message = error.message || "Error retrieving shipped status orders.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
 // API to get all "delivered" status orders
 exports.getAllDeliveredStatusOrders = async (req, res) => {
   try {
@@ -1257,5 +1312,33 @@ exports.getAllDeliveredStatusOrders = async (req, res) => {
       error.message ||
       "An error occurred while fetching 'delivered' status orders.";
     res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+// API to get all "delivered" status orders with customer and operator details
+exports.getAllDeliveredStatusOrdersWithCustomerAndOperatorDetails = async (req, res) => {
+  try {
+    // Fetch all orders with "delivered" status, including customer and operator details
+    const orders = await Order.findAll({
+      where: { order_status: "delivered", delete_status: 0 }, // Only "delivered" and active orders
+      include: [
+        {
+          model: Customer,
+          attributes: { exclude: ["password"] }, // Exclude sensitive fields like password
+        },
+        {
+          model: Operator,
+          attributes: { exclude: ["password"] }, // Exclude sensitive fields like password
+        },
+      ],
+    });
+
+    RESPONSE.Success.Message = "Delivered status orders with customer and operator details retrieved successfully.";
+    RESPONSE.Success.data = orders;
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("Error retrieving delivered status orders with details:", error);
+    RESPONSE.Failure.Message = error.message || "Error retrieving delivered status orders.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };

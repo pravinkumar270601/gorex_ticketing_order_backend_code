@@ -4,7 +4,9 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const app = express();
 const path = require("path");
- 
+const { createDefaultAdmins } = require("./app/controllers/admin.controller");
+const { createDefaultManagers } = require("./app/controllers/manager.controller");
+
 require("dotenv").config();
 
 
@@ -33,8 +35,11 @@ const db = require("./app/models");
 
 db.sequelize
   .sync({ alter: true })
-  .then(() => {
+  .then(async () => {
     console.log("Synced db.");
+    // Call createDefaultAdmins after syncing
+    await createDefaultAdmins();
+    await createDefaultManagers();
   })
   .catch((err) => {
     console.log("Failed to sync db: " + err.message);

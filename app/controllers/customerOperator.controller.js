@@ -19,6 +19,7 @@ exports.createAssignment = async (req, res) => {
     const existingAssignment = await CustomerOperator.findOne({
       where: { customer_id, operator_id, delete_status: 0 },
     });
+    // where: { customer_id, delete_status: 0 },
 
     if (existingAssignment) {
       RESPONSE.Success.Message = "Assignment already exists.";
@@ -368,7 +369,7 @@ exports.updateOperatorAssignment = async (req, res) => {
   try {
     // Find the existing active assignment
     const existingAssignment = await CustomerOperator.findOne({
-      where: { customer_id, delete_status: 0 },
+      where: { customer_id, delete_status: 0},
     });
 
     // Check if the assignment already exists with the same operator_id
@@ -377,6 +378,7 @@ exports.updateOperatorAssignment = async (req, res) => {
       RESPONSE.Success.data = {};
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
     }
+    
 
     // If there is an existing assignment, soft delete it
     if (existingAssignment) {

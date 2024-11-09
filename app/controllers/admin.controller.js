@@ -12,6 +12,128 @@ const RESPONSE = require("../constants/response");
 const { MESSAGE } = require("../constants/message");
 const { StatusCode } = require("../constants/HttpStatusCode");
 
+// Function to create default admins from only controller
+// exports.createDefaultAdmins = async () => {
+//   try {
+//     // Define default admins
+//     const defaultAdmins = [
+//       {
+//         name: "Default Admin",
+//         email: "admin@gorex.in",
+//         phone: "1234567890",
+//         password: "1234", // Default password
+//       },
+//       {
+//         name: "Backup Admin",
+//         email: "backupadmin@gorex.in",
+//         phone: "0987654321",
+//         password: "1234", // Another default password
+//       },
+//     ];
+
+//     for (const adminData of defaultAdmins) {
+//       // Check if email already exists
+//       const emailExists = await Admin.findOne({
+//         where: { email: adminData.email, delete_status: 0 },
+//       });
+//       if (emailExists) {
+//         console.log(`Admin with email ${adminData.email} already exists.`);
+//         continue; // Skip to the next admin
+//       }
+
+//       // Check if phone number already exists
+//       const phoneExists = await Admin.findOne({
+//         where: { phone: adminData.phone, delete_status: 0 },
+//       });
+//       if (phoneExists) {
+//         console.log(`Admin with phone number ${adminData.phone} already exists.`);
+//         continue; // Skip to the next admin
+//       }
+
+//       // Create the admin if no email or phone conflict
+//       await Admin.create(adminData);
+//       console.log(`Default admin created: ${adminData.email}`);
+//     }
+//   } catch (error) {
+//     console.error("Error creating default admins:", error);
+//   }
+// };
+
+// Function to create default admins from controller and .env
+
+exports.createDefaultAdmins = async () => {
+  try {
+    // Step 1: Define multiple hardcoded admins
+    const hardcodedAdmins = [
+      {
+        name: "Backup Admin",
+        email: "backupadmin@gorex.in",
+        phone: "4567890123",
+        password: "1234",
+      },
+      // {
+      //   name: "Primary Admin",
+      //   email: "primaryadmin@gorex.in",
+      //   phone: "1234567890",
+      //   password: "1234", // Default password
+      // },
+      // {
+      //   name: "Secondary Admin",
+      //   email: "secondaryadmin@gorex.in",
+      //   phone: "2345678901",
+      //   password: "1234", // Default password
+      // },
+    ];
+
+    // Step 2: Iterate through each hardcoded admin and create if not exists
+    for (const adminData of hardcodedAdmins) {
+      const emailExists = await Admin.findOne({
+        where: { email: adminData.email, delete_status: 0 },
+      });
+
+      if (!emailExists) {
+        // Create admin if no conflict
+        await Admin.create(adminData);
+        // console.log(`Hardcoded admin created: ${adminData.email}`);
+      } else {
+        // console.log(`Admin with email ${adminData.email} already exists.`);
+      }
+    }
+
+    // Step 3: Parse admins from the .env file if provided
+    const defaultAdmins = JSON.parse(process.env.ADMINS || "[]"); // Ensure default is empty if undefined
+
+    // Step 4: Iterate over admins from the .env file and create them
+    for (const adminData of defaultAdmins) {
+      // Check if email already exists
+      const emailExists = await Admin.findOne({
+        where: { email: adminData.email, delete_status: 0 },
+      });
+      if (emailExists) {
+        // console.log(`Admin with email ${adminData.email} already exists.`);
+        continue; // Skip to the next admin
+      }
+
+      // Check if phone number already exists
+      const phoneExists = await Admin.findOne({
+        where: { phone: adminData.phone, delete_status: 0 },
+      });
+      if (phoneExists) {
+        // console.log(
+        //   `Admin with phone number ${adminData.phone} already exists.`
+        // );
+        continue; // Skip to the next admin
+      }
+
+      // Create the admin if no email or phone conflict
+      await Admin.create(adminData);
+      // console.log(`Admin created from .env: ${adminData.email}`);
+    }
+  } catch (error) {
+    // console.error("Error creating default admins:", error);
+  }
+};
+
 exports.checkAdminExistForRegister = async (req, res) => {
   try {
     const { email, phone } = req.body;
@@ -106,13 +228,20 @@ exports.registerAdmin = async (req, res) => {
 exports.loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const admin = await Admin.findOne({ where: { email, password } });
+    const admin = await Admin.findOne({ where: { email, delete_status: 0 } });
     if (!admin) {
       RESPONSE.Success.Message = "Admin not found!";
       RESPONSE.Success.data = {};
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
       // return res.status(401).json({ message: "Invalid credentials" });
     }
+    if (admin.password !== password) {
+      RESPONSE.Success.Message = "Invalid password.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      // return res.status(401).json({ message: "Invalid password." });
+    }
+
     RESPONSE.Success.Message = "Admin logged in successfully";
     RESPONSE.Success.data = admin;
     res.status(StatusCode.CREATED.code).send(RESPONSE.Success);
@@ -134,7 +263,7 @@ exports.getAdminById = async (req, res) => {
   try {
     const admin = await Admin.findOne({
       where: { admin_id: adminId },
-      attributes: { exclude: ["password"] }, // Exclude the password field from the response
+      // attributes: { exclude: ["password"] }, // Exclude the password field from the response
     });
 
     if (!admin) {
@@ -395,6 +524,97 @@ exports.editAdminInfo = async (req, res) => {
     console.error("Error updating admin information:", error);
     RESPONSE.Failure.Message =
       error.message || "Failed to update admin information.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+exports.checkEmailPhoneAvailabilityForAdmin = async (req, res) => {
+  try {
+    const adminId = req.params.admin_id; // Get admin_id from request parameters
+    const { email, phone } = req.body; // Get email and phone from the request body
+
+    // Validation: Check if either email or phone is provided
+    if (!email && !phone) {
+      RESPONSE.Failure.Message = "Email or phone number is required.";
+      return res.status(StatusCode.BAD_REQUEST.code).send(RESPONSE.Failure);
+    }
+
+    // Check if the new email already exists for another admin
+    if (email) {
+      const emailExists = await Admin.findOne({
+        where: {
+          email,
+          delete_status: 0,
+          admin_id: { [Op.ne]: adminId }, // Exclude current admin by ID
+        },
+      });
+
+      if (emailExists) {
+        RESPONSE.Success.Message =
+          "The email is already in use by another admin.";
+        RESPONSE.Success.data = {};
+        return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      }
+    }
+
+    // Check if the new phone number already exists for another admin
+    if (phone) {
+      const phoneExists = await Admin.findOne({
+        where: {
+          phone,
+          delete_status: 0,
+          admin_id: { [Op.ne]: adminId }, // Exclude current admin by ID
+        },
+      });
+
+      if (phoneExists) {
+        RESPONSE.Success.Message =
+          "The phone number is already in use by another admin.";
+        RESPONSE.Success.data = {};
+        return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      }
+    }
+
+    // If no conflicts are found, return success response
+    RESPONSE.Success.Message = "Email and phone are available.";
+    RESPONSE.Success.data = {};
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("Error checking email and phone availability:", error);
+    RESPONSE.Failure.Message =
+      error.message || "Failed to check email and phone availability.";
+    return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
+  }
+};
+
+exports.resetPasswordForAdmin = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // Check if the admin with the specified email and delete_status of 0 exists
+    const admin = await Admin.findOne({
+      where: {
+        email,
+        delete_status: 0, // Ensure the admin is active
+      },
+    });
+
+    if (!admin) {
+      RESPONSE.Success.Message = "Admin not found! Please sign up.";
+      RESPONSE.Success.data = {};
+      return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+      // RESPONSE.Failure.Message = "Admin not found! Please sign up.";
+      // return res.status(StatusCode.NOT_FOUND.code).send(RESPONSE.Failure);
+    }
+
+    // Update the password
+    await Admin.update({ password: newPassword }, { where: { email } });
+
+    RESPONSE.Success.Message = "Password has been reset successfully.";
+    return res.status(StatusCode.OK.code).send(RESPONSE.Success);
+  } catch (error) {
+    console.error("Error resetting admin password:", error);
+    RESPONSE.Failure.Message = error.message || "Failed to reset password.";
     return res.status(StatusCode.SERVER_ERROR.code).send(RESPONSE.Failure);
   }
 };

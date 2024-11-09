@@ -34,12 +34,29 @@ router.delete("/deleteAdmin/:admin_id", adminController.deleteAdmin);
 
 router.put("/editAdminInfo/:admin_id", adminController.editAdminInfo);
 
+router.post("/resetPasswordForAdmin", adminController.resetPasswordForAdmin);
+
+router.post(
+  "/checkEmailPhoneAvailabilityForAdmin/:admin_id",
+  adminController.checkEmailPhoneAvailabilityForAdmin
+);
+
 // manager Routes
 router.post("/register/manager", managerController.registerManager);
 router.post("/login/manager", managerController.loginManager);
 router.get("/getManagerById/:manager_id", managerController.getManagerById);
 router.delete("/deleteManager/:manager_id", managerController.deleteManager);
 router.put("/editManagerInfo/:manager_id", managerController.editManagerInfo);
+
+router.post(
+  "/resetPasswordForManager",
+  managerController.resetPasswordForManager
+);
+
+router.post(
+  "/checkEmailPhoneAvailabilityForManager/:manager_id",
+  managerController.checkEmailPhoneAvailabilityForManager
+);
 
 // operator Routes
 router.post("/register/operator", operatorController.registerOperator);
@@ -70,6 +87,16 @@ router.get(
 router.put(
   "/editOperatorInfo/:operator_id",
   operatorController.editOperatorInfo
+);
+
+router.post(
+  "/checkEmailPhoneAvailabilityForOperator/:operator_id",
+  operatorController.checkEmailPhoneAvailabilityForOperator
+);
+
+router.post(
+  "/resetPasswordForOperator",
+  operatorController.resetPasswordForOperator
 );
 router.delete(
   "/deleteOperator/:operator_id",
@@ -103,6 +130,16 @@ router.delete(
   "/deleteCustomer/:customer_id",
   customerController.deleteCustomer
 );
+router.post(
+  "/resetPasswordForCustomer",
+  customerController.resetPasswordForCustomer
+);
+
+router.post(
+  "/checkEmailPhoneAvailabilityForCustomer/:customer_id",
+  customerController.checkEmailPhoneAvailabilityForCustomer
+);
+
 // order Routes
 
 router.post("/createOrder", orderController.createOrder);
@@ -196,6 +233,21 @@ router.get(
   orderController.getAllOrdersWithCustomerAndOperatorDetails
 );
 
+router.get(
+  "/getAllOrderedStatusOrdersWithCustomerAndOperatorDetails",
+  orderController.getAllOrderedStatusOrdersWithCustomerAndOperatorDetails
+);
+
+router.get(
+  "/getAllShippedStatusOrdersWithCustomerAndOperatorDetails",
+  orderController.getAllShippedStatusOrdersWithCustomerAndOperatorDetails
+);
+
+router.get(
+  "/getAllDeliveredStatusOrdersWithCustomerAndOperatorDetails",
+  orderController.getAllDeliveredStatusOrdersWithCustomerAndOperatorDetails
+);
+
 // customerOperator Routes
 
 router.post("/createAssignment", customerOperatorController.createAssignment);
@@ -226,96 +278,96 @@ router.get(
 
 // admin ===========>
 
-router.get(
+router.post(
   "/getOverallDashboardStatsWithFilter",
   dateFilterController.getOverallDashboardStatsWithFilter
 );
-router.get(
+router.post(
   "/getAllOrdersWithCustomerAndOperatorDetailsWithFilter",
   dateFilterController.getAllOrdersWithCustomerAndOperatorDetailsWithFilter
 );
-router.get(
+router.post(
   "/getAllOrdersWithFilter",
   dateFilterController.getAllOrdersWithFilter
 );
-router.get(
+router.post(
   "/getAllOperatorsWithCustomerDetailWithFilter",
   dateFilterController.getAllOperatorsWithCustomerDetailWithFilter
 );
-router.get(
+router.post(
   "/getAllOperatorsWithFilter",
   dateFilterController.getAllOperatorsWithFilter
 );
-router.get(
+router.post(
   "/getAllCustomersWithOperatorsDetailsWithFilter",
   dateFilterController.getAllCustomersWithOperatorsDetailsWithFilter
 );
-router.get(
+router.post(
   "/getAllCustomersWithFilter",
   dateFilterController.getAllCustomersWithFilter
 );
 
-router.get(
+router.post(
   "/getAllOrderedStatusOrdersByOrdersTimeWithFilter",
   dateFilterController.getAllOrderedStatusOrdersByOrdersTimeWithFilter
 );
-router.get(
+router.post(
   "/getAllShippedStatusOrdersByOrdersTimeWithFilter",
   dateFilterController.getAllShippedStatusOrdersByOrdersTimeWithFilter
 );
-router.get(
+router.post(
   "/getAllDeliveredStatusOrdersByOrdersTimeWithFilter",
   dateFilterController.getAllDeliveredStatusOrdersByOrdersTimeWithFilter
 );
 
-router.get(
+router.post(
   "/getAllOrderedStatusOrdersWithFilter",
   dateFilterController.getAllOrderedStatusOrdersWithFilter
 );
-router.get(
+router.post(
   "/getAllShippedStatusOrdersWithFilter",
   dateFilterController.getAllShippedStatusOrdersWithFilter
 );
-router.get(
+router.post(
   "/getAllDeliveredStatusOrdersWithFilter",
   dateFilterController.getAllDeliveredStatusOrdersWithFilter
 );
 
 // customer ===========>
 
-router.get(
+router.post(
   "/getDashboardStatsForCustomerWithFilter/customer/:customer_id",
   dateFilterController.getDashboardStatsForCustomerWithFilter
 );
 
-router.get(
+router.post(
   "/getAllOrdersByCustomerWithFilter/customer/:customer_id",
   dateFilterController.getAllOrdersByCustomerWithFilter
 );
 
-router.get(
+router.post(
   "/getOrderedStatusOrdersForCustomerOrdersTimeWithFilter/customer/:customer_id",
   dateFilterController.getOrderedStatusOrdersForCustomerOrdersTimeWithFilter
 );
 
-router.get(
+router.post(
   "/getShippedStatusOrdersForCustomerOrdersTimeWithFilter/customer/:customer_id",
   dateFilterController.getShippedStatusOrdersForCustomerOrdersTimeWithFilter
 );
 
-router.get(
+router.post(
   "/getDeliveredStatusOrdersForCustomerOrdersTimeWithFilter/customer/:customer_id",
   dateFilterController.getDeliveredStatusOrdersForCustomerOrdersTimeWithFilter
 );
 
 // operator  ===========>
 
-router.get(
+router.post(
   "/getDashboardStatsForOperatorWithFilter/operator/:operator_id",
   dateFilterController.getDashboardStatsForOperatorWithFilter
 );
 
-router.get(
+router.post(
   "/getAllOrdersByOperatorWithFilter/operator/:operator_id",
   dateFilterController.getAllOrdersByOperatorWithFilter
 );
@@ -330,22 +382,22 @@ router.get(
 
 // -------------------- NOT SOLVED (25-10-24) -------------------
 
-router.get(
+router.post(
   "/getCustomersForOperatorWithFilter/operator/:operator_id",
   dateFilterController.getCustomersForOperatorWithFilter
 );
 
-router.get(
+router.post(
   "/getOrderedStatusOrdersForOperatorOrdersTimeWithFilter/operator/:operator_id",
   dateFilterController.getOrderedStatusOrdersForOperatorOrdersTimeWithFilter
 );
 
-router.get(
+router.post(
   "/getShippedStatusOrdersForOperatorOrdersTimeWithFilter/operator/:operator_id",
   dateFilterController.getShippedStatusOrdersForOperatorOrdersTimeWithFilter
 );
 
-router.get(
+router.post(
   "/getDeliveredStatusOrdersForOperatorOrdersTimeWithFilter/operator/:operator_id",
   dateFilterController.getDeliveredStatusOrdersForOperatorOrdersTimeWithFilter
 );
@@ -354,17 +406,6 @@ router.get(
 router.post("/sendOTP", otpController.sendOTP);
 router.post("/verifyOTP", otpController.verifyOTP);
 
-// test
-
-router.get(
-  "/getCustomersWithNewFilter",
-  customerController.getCustomersWithNewFilter
-);
-
-router.get(
-  "/getCustomersWithOldFilter",
-  customerController.getCustomersWithOldFilter
-);
 
 // Addresses router
 
@@ -373,7 +414,9 @@ router.get("/getAllAddresses", AddressesController.getAllAddresses);
 router.get("/getAddressById/:address_id", AddressesController.getAddressById);
 router.put("/updateAddress/:address_id", AddressesController.updateAddress);
 router.delete("/deleteAddress/:address_id", AddressesController.deleteAddress);
-router.get("/getAllAddressesDropdown", AddressesController.getAllAddressesDropdown);
-
+router.get(
+  "/getAllAddressesDropdown",
+  AddressesController.getAllAddressesDropdown
+);
 
 module.exports = router;

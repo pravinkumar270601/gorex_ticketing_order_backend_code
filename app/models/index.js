@@ -43,16 +43,32 @@ db.addresses =  require("./address.model.js")(sequelize, Sequelize);
 
 
 // Customer and Operator many-to-many relationship through CustomerOperator
+// db.customers.belongsToMany(db.operators, {
+//   through: db.customerOperator,
+//   foreignKey: "customer_id",
+//   otherKey: "operator_id",
+//   uniqueKey: false  // This avoids adding a unique constraint
+
+// });
+
+// db.operators.belongsToMany(db.customers, {
+//   through: db.customerOperator,
+//   foreignKey: "operator_id",
+//   otherKey: "customer_id",
+//   uniqueKey: false  // This avoids adding a unique constraint
+// });
+
+// Customer and Operator many-to-many relationship through CustomerOperator
 db.customers.belongsToMany(db.operators, {
-  through: db.customerOperator,
+  through: { model: db.customerOperator, unique: false },
   foreignKey: "customer_id",
-  otherKey: "operator_id",
+  otherKey: "operator_id"
 });
 
 db.operators.belongsToMany(db.customers, {
-  through: db.customerOperator,
+  through: { model: db.customerOperator, unique: false },
   foreignKey: "operator_id",
-  otherKey: "customer_id",
+  otherKey: "customer_id"
 });
 
 // Define associations
