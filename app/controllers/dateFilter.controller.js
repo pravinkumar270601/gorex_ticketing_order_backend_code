@@ -282,6 +282,7 @@ exports.getAllOperatorsWithCustomerDetailWithFilter = async (req, res) => {
           model: Customer,
           through: {
             model: CustomerOperator,
+            where: { delete_status: 0 },
             attributes: [], // Do not include any extra fields from the junction table
           },
           attributes: { exclude: ["password"] }, // Exclude the password field from customers
@@ -344,8 +345,10 @@ exports.getAllCustomersWithOperatorsDetailsWithFilter = async (req, res) => {
       include: [
         {
           model: Operator,
+          
           through: {
             model: CustomerOperator,
+            where: { delete_status:0 },
             attributes: [], // Don't include extra fields from the junction table
           },
         },
@@ -1500,7 +1503,8 @@ exports.getCustomersForOperatorWithFilter = async (req, res) => {
       include: [
         {
           model: Customer, // Assuming there is a Customer model
-          attributes: ["customer_id", "name", "email", "phone"], // Select necessary fields
+          // attributes: ["customer_id", "name", "email", "phone"], // Select necessary fields
+          attributes: { exclude: ["password"] },
         },
       ],
     });

@@ -19,11 +19,6 @@ app.use(
   })
 );
 
-// Set Content-Type to JSON for all responses
-app.use((req, res, next) => {
-  res.setHeader("Content-Type", "application/json");
-  next();
-});
 
 // parse requests of content-type - application/json
 app.use(express.json());

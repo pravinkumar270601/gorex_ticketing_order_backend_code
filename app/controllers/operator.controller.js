@@ -235,7 +235,7 @@ exports.editOperatorInfo = async (req, res) => {
       const phoneExists = await Operator.findOne({
         where: {
           phone: newPhone,
-          customer_id: { [Op.ne]: operatorId }, // Exclude current Operator by ID
+          operator_id: { [Op.ne]: operatorId }, // Exclude current Operator by ID
           delete_status: 0,
         },
       });

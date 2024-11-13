@@ -436,7 +436,8 @@ exports.getCustomersByOperator = async (req, res) => {
       include: [
         {
           model: Customer, // Assuming there is a Customer model
-          attributes: ["customer_id", "name", "email", "phone"], // Select necessary fields
+          // attributes: ["customer_id", "name", "email", "phone"], // Select necessary fields
+          attributes: { exclude: ["password"] },
         },
       ],
     });
