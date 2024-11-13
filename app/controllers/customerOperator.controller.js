@@ -446,7 +446,7 @@ exports.getCustomersByOperator = async (req, res) => {
     if (!customers || customers.length === 0) {
       RESPONSE.Success.Message =
         "No customers found for the specified operator.";
-      RESPONSE.Success.data = {};
+      RESPONSE.Success.data =[];
       return res.status(StatusCode.OK.code).send(RESPONSE.Success);
       // return res.status(404).json({
       //   message: "No customers found for the specified operator.",
